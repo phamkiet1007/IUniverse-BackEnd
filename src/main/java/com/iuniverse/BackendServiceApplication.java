@@ -8,15 +8,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class BackendServiceApplication {
 
-	@Value("${jwt.secretKey}")
-	private String jwtKey;
 
 	public static void main(String[] args) {
 		SpringApplication.run(BackendServiceApplication.class, args);
 	}
 
-	@PostConstruct
-	public void init() {
-		System.out.println("jwtKey=" + jwtKey);
-	}
 }
