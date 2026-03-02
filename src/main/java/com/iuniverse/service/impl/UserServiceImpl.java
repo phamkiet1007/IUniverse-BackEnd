@@ -7,6 +7,7 @@ import com.iuniverse.controller.request.UserPasswordRequest;
 import com.iuniverse.controller.request.UserUpdateRequest;
 import com.iuniverse.controller.response.UserPageResponse;
 import com.iuniverse.controller.response.UserResponse;
+import com.iuniverse.exception.InvalidDataException;
 import com.iuniverse.exception.ResourceNotFoundException;
 import com.iuniverse.model.AddressEntity;
 import com.iuniverse.model.UserEntity;
@@ -109,6 +110,13 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public Long save(UserCreationRequest req) {
         log.info("Saving user: {}", req);
+
+        UserEntity userByEmail = userRepository.findByEmail(req.getEmail());
+        if(userByEmail != null) {
+            log.warn("Email is already exist: {}", req.getEmail());
+            throw new InvalidDataException("Email is already exist!");
+        }
+
         UserEntity user = new UserEntity();
         user.setFirstName(req.getFirstName());
         user.setLastName(req.getLastName());
