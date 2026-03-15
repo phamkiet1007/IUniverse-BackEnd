@@ -10,18 +10,18 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Date;
+import java.io.Serializable;
+import java.util.*;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "tbl_user")
-public class UserEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+public class User extends AbstractEntity<Long> implements UserDetails, Serializable {
+
 
     @Column(name = "first_name", length = 255)
     private String firstName;
@@ -60,17 +60,38 @@ public class UserEntity {
     @Column(name = "status", length = 255)
     private UserStatus status;
 
-    // Chữ "user" ở đây chính là tên biến UserEntity bên trong class AddressEntity
+    // Chữ "user" ở đây chính là tên biến User bên trong class Address
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    private AddressEntity address;
+    private Address address;
 
-    @Column(name = "created_at", length = 255)
-    @CreationTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
+    @OneToMany(mappedBy = "user")
+    private Set<UserHasRole> roles = new HashSet<>();
 
-    @Column(name = "updated_at", length = 255)
-    @UpdateTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
+    @OneToMany(mappedBy = "user")
+    private Set<GroupHasUser> groups = new HashSet<>();
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return UserDetails.super.isAccountNonExpired();
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return UserDetails.super.isAccountNonLocked();
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return UserDetails.super.isCredentialsNonExpired();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return UserStatus.ACTIVE.equals(status);
+    }
 }

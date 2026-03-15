@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -70,6 +71,42 @@ public class GlobalExceptionHandler {
             errorResponse.setError("Invalid Data");
             errorResponse.setMessage(message);
         }
+
+        return errorResponse;
+    }
+
+    /**
+     * Handle exception when validate data
+     *
+     * @param e
+     * @param request
+     * @return errorResponse
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(FORBIDDEN)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = {@Content(mediaType = APPLICATION_JSON_VALUE,
+                            examples = @ExampleObject(
+                                    name = "403 Response",
+                                    summary = "Handle forbidden exception when user access denied",
+                                    value = """
+                                            {
+                                                 "timestamp": "2024-04-07T11:38:56.368+00:00",
+                                                 "status": 403,
+                                                 "path": "/api/v1/...",
+                                                 "error": "Invalid Payload",
+                                                 "message": "{data} ... access denied"
+                                             }
+                                            """
+                            ))})
+    })
+    public ErrorResponse handleAccessDeniedException(Exception e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setStatus(FORBIDDEN.value());
+        errorResponse.setError(FORBIDDEN.getReasonPhrase());
+        errorResponse.setMessage(e.getMessage());
 
         return errorResponse;
     }

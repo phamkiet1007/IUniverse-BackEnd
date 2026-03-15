@@ -1,7 +1,7 @@
 package com.iuniverse.controller;
 
 import com.iuniverse.controller.request.UserCreationRequest;
-import com.iuniverse.controller.request.UserPasswordRequest;
+import com.iuniverse.controller.request.ResetPasswordRequest;
 import com.iuniverse.controller.request.UserUpdateRequest;
 import com.iuniverse.controller.response.UserPageResponse;
 import com.iuniverse.controller.response.UserResponse;
@@ -18,7 +18,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -104,17 +103,4 @@ public class UserController {
         return result;
     }
 
-    @Operation(summary = "Change password", description = "Dedicated API for changing a user's password")
-    @PatchMapping("/change-password")
-    public Map<String, Object> changePassword(@RequestBody @Valid UserPasswordRequest request) {
-        log.info("Changing password for user {}", request);
-        userService.changePassword(request);
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("status", HttpStatus.NO_CONTENT.value());
-        result.put("message", "Password updated successfully");
-        result.put("data", "");
-        return result;
-
-    }
 }
