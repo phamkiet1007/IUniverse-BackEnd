@@ -99,12 +99,14 @@ CREATE TABLE "tbl_role_has_permission" (
 );
 
 -- Bảng Token (Quan hệ N-1 với User: 1 user có thể đăng nhập trên nhiều thiết bị)
+-- Bảng Token
 CREATE TABLE "tbl_token" (
                              "id" BIGSERIAL PRIMARY KEY,
-                             "username" VARCHAR(255) NOT NULL, -- Liên kết lỏng (Loose Coupling)
-                             "access_token" TEXT NOT NULL,
-                             "refresh_token" TEXT NOT NULL,
-                             "device_info" VARCHAR(255),       -- (Tùy chọn) Để lưu User-Agent nếu bạn muốn làm tính năng quản lý thiết bị
+                             "username" VARCHAR(255) NOT NULL,
+                             "access_token" TEXT,
+                             "refresh_token" TEXT,
+                             "reset_token" TEXT,
+                             "device_info" VARCHAR(255),
                              "created_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                              "updated_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

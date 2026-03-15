@@ -12,7 +12,8 @@ public interface UserService {
     UserResponse findById(Long id);
     UserResponse findByUsername(String username);
 
-    User getByUsername(String username);
+    //dùng cho reset-token
+//    User getByUsername(String username);
 
     User getUserByEmail(String email);
     Long save(UserCreationRequest req);

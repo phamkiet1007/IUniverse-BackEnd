@@ -57,11 +57,12 @@ public class AuthenticationController {
         return new ResponseEntity<>(authenticationService.forgotPassword(email), OK);
     }
 
-    @Operation(summary = "Reset password", description = "Reset password by email")
-    @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestBody String secretKey) {
-        return new ResponseEntity<>(authenticationService.resetPassword(secretKey), OK);
-    }
+    //dùng cho reset-token
+//    @Operation(summary = "Reset password", description = "Reset password by email")
+//    @PostMapping("/reset-password")
+//    public ResponseEntity<String> resetPassword(@RequestBody String secretKey) {
+//        return new ResponseEntity<>(authenticationService.resetPassword(secretKey), OK);
+//    }
 
     @Operation(summary = "Change password", description = "Change password by old password and new password")
     @PostMapping("/change-password")

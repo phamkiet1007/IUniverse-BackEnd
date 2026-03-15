@@ -30,4 +30,21 @@ public record TokenService(TokenRepository tokenRepository) {
         return tokenRepository.findByRefreshToken(refreshToken)
                 .orElse(null);
     }
+
+    //dùng cho reset-token
+//    public Token getTokenByResetToken(String resetToken) {
+//        return tokenRepository.findByResetToken(resetToken).orElse(null);
+//    }
+
+    public Token getTokenByUsernameAndOtp(String username, String otp) {
+        return tokenRepository.findByUsernameAndResetToken(username, otp).orElse(null);
+    }
+
+    public Token getTokenByUsernameAndDeviceInfo(String username, String deviceInfo) {
+        return tokenRepository.findByUsernameAndDeviceInfo(username, deviceInfo).orElse(null);
+    }
+
+    public void deleteResetTokensByUsername(String username) {
+        tokenRepository.deleteResetTokensByUsername(username);
+    }
 }

@@ -9,10 +9,7 @@ import com.iuniverse.exception.InvalidDataException;
 import com.iuniverse.model.Token;
 import com.iuniverse.model.User;
 import com.iuniverse.repository.UserRepository;
-import com.iuniverse.service.AuthenticationService;
-import com.iuniverse.service.JwtService;
-import com.iuniverse.service.TokenService;
-import com.iuniverse.service.UserService;
+import com.iuniverse.service.*;
 import io.micrometer.common.util.StringUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +25,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Random;
+
 import static com.iuniverse.common.TokenType.REFRESH_TOKEN;
 import static com.iuniverse.common.TokenType.RESET_TOKEN;
 
@@ -42,6 +41,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final UserService userService;
     private final TokenService tokenService;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Override
     public TokenResponse getAccessToken(SignInRequest request) {
@@ -68,14 +68,28 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         String accessToken = jwtService.generateAccessToken(user.getId(), request.getUsername(), null);
         String refreshToken = jwtService.generateRefreshToken(user.getId(), request.getUsername(), null);
-        
-        //save token to database
-        tokenService.save(Token.builder()
+
+        String deviceInfo = request.getPlatform();
+
+        Token existingToken = tokenService.getTokenByUsernameAndDeviceInfo(user.getUsername(), deviceInfo);
+
+        if (existingToken != null) {
+            // Thiết bị này đã đăng nhập trước đó -> ghi đè token mới
+            existingToken.setAccessToken(accessToken);
+            existingToken.setRefreshToken(refreshToken);
+            tokenService.save(existingToken);
+            log.info("Updated existing tokens for device: {}", deviceInfo);
+        } else {
+            // Thiết bị mới tinh -> TẠO MỚI
+            tokenService.save(Token.builder()
                     .username(user.getUsername())
                     .accessToken(accessToken)
                     .refreshToken(refreshToken)
+                    .deviceInfo(deviceInfo)
                     .build());
-        
+            log.info("Created new tokens for new device: {}", deviceInfo);
+        }
+
         return TokenResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
@@ -154,78 +168,79 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public String forgotPassword(String email) {
         log.info("Processing forgot password request for email: {}", email);
 
-        //check if email exists
         User user = userService.getUserByEmail(email);
 
-        //check user's status
         if(!user.isEnabled()) {
-            log.warn("Cannot reset password. User {} is not active", email);
             throw new InvalidDataException("User is not active");
         }
 
-        //generate reset token
-        String resetToken = jwtService.generateResetToken(user.getId(), user.getUsername(), null);
+        String otp = String.format("%06d", new Random().nextInt(999999));
 
-        //generate link to contain token
-        String confirmLink = String.format("curl --location 'http://localhost:8081/auth/reset-password' \\\n" +
-                "--header 'Content-Type: text/plain' \\\n" +
-                "--header 'Authorization: ••••••' \\\n" +
-                "--data '%s'", resetToken);
+        tokenService.deleteResetTokensByUsername(user.getUsername());
+        log.info("Cleared old OTPs for user: {}", user.getUsername());
 
-        log.info("Confirmation link generated: {}", confirmLink);
+        tokenService.save(Token.builder()
+                .username(user.getUsername())
+                .resetToken(otp)
+                .build());
 
-        // TODO: send confirmation email
+        emailService.sendResetPasswordEmail(user.getEmail(), otp);
 
-        return "Reset password link has been sent to your email";
-    }
-
-    @Override
-    public String resetPassword(String secretKey) {
-        log.info("----- reset password -----");
-
-        final String userName = jwtService.extractUsername(secretKey, RESET_TOKEN);
-        var user = userRepository.findByUsername(userName);
-
-        if(!jwtService.isTokenValid(secretKey, RESET_TOKEN, user)) {
-            throw new AccessDeniedException("Invalid or expired refresh token");
-        }
-
-        return "Reset";
+        return "OTP has been sent to your email!";
     }
 
     @Override
     public String changePassword(ResetPasswordRequest request) {
-        log.info("----- change password -----");
-
-        User user = validateToken(request.getSecretKey());
+        log.info("----- verify OTP and change password -----");
 
         if(!request.getPassword().equals(request.getConfirmPassword())) {
-            throw new InvalidDataException("Password and confirm password not match");
+            throw new InvalidDataException("Password and confirm password do not match");
         }
 
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-
-        userService.saveUser(user);
-        return "Password changed successfully!";
-
-    }
-
-    private User validateToken(String secretKey) {
-        // validate token
-        final String userName = jwtService.extractUsername(secretKey, RESET_TOKEN);
-
-        // validate user is active or not
-        var user = userRepository.findByUsername(userName);
-
+        User user = userService.getUserByEmail(request.getEmail());
         if(!user.isEnabled()) {
             throw new InvalidDataException("User is not active");
         }
 
-        if(!jwtService.isTokenValid(secretKey, RESET_TOKEN, user)) {
-            throw new InvalidDataException("Access denied with this token");
+        // Verify OTP in the database
+        Token tokenInDb = tokenService.getTokenByUsernameAndOtp(user.getUsername(), request.getOtp());
+        if (tokenInDb == null) {
+            throw new InvalidDataException("OTP is invalid or has expired!");
         }
 
-        return user;
+
+        long timeDiff = System.currentTimeMillis() - tokenInDb.getCreatedAt().getTime();
+        if (timeDiff > 5 * 60 * 1000) {
+            throw new InvalidDataException("OTP has expired");
+        }
+
+
+        // Everything is valid -> Change password
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        userService.saveUser(user);
+
+        // Delete the OTP immediately so it cannot be reused
+        tokenService.delete(tokenInDb);
+        log.info("Deleted OTP token for user: {}", user.getUsername());
+
+        return "Password changed successfully!";
     }
+
+    //dùng cho reset-token
+//    @Override
+//    public String resetPassword(String secretKey) {
+//        log.info("----- reset password -----");
+//
+//        final String userName = jwtService.extractUsername(secretKey, RESET_TOKEN);
+//
+//        var user = userRepository.findByUsername(userName);
+//
+//        if(!jwtService.isTokenValid(secretKey, RESET_TOKEN, user)) {
+//            throw new AccessDeniedException("Invalid or expired refresh token");
+//        }
+//
+//        return "Reset";
+//    }
+
 }
 

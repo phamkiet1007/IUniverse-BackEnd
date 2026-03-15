@@ -9,8 +9,11 @@ import java.io.Serializable;
 @Getter
 @ToString
 public class ResetPasswordRequest implements Serializable {
-    @NotBlank(message = "secretKey must be not blank")
-    private String secretKey;
+    @NotBlank(message = "Email is required")
+    private String email;
+
+    @NotBlank(message = "OTP is required")
+    private String otp;
 
     @NotBlank(message = "password must be not blank")
     private String password;

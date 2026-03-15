@@ -14,7 +14,7 @@ import lombok.*;
 @Table(name = "tbl_token")
 public class Token extends AbstractEntity<Integer> {
 
-    @Column(name = "username", unique = true)
+    @Column(name = "username")
     private String username;
 
     @Column(name = "access_token")
@@ -22,4 +22,10 @@ public class Token extends AbstractEntity<Integer> {
 
     @Column(name = "refresh_token")
     private String refreshToken;
+
+    @Column(name = "reset_token")
+    private String resetToken;
+
+    @Column(name = "device_info")
+    private String deviceInfo;
 }

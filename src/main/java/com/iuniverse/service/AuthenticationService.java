@@ -17,7 +17,8 @@ public interface AuthenticationService {
 
     String forgotPassword(String email);
 
-    String resetPassword(String secretKey);
+    //dùng cho reset-token
+//    String resetPassword(String secretKey);
 
     String changePassword(@Valid ResetPasswordRequest request);
 }

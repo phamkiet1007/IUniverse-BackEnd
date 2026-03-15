@@ -105,10 +105,11 @@ public class UserServiceImpl implements UserService {
         return null;
     }
 
-    @Override
-    public User getByUsername(String username) {
-        return userRepository.findByUsername(username);
-    }
+    //dùng cho reset-token
+//    @Override
+//    public User getByUsername(String username) {
+//        return userRepository.findByUsername(username);
+//    }
 
     @Override
     public User getUserByEmail(String email) {
