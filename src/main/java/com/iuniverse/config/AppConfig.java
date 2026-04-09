@@ -32,6 +32,7 @@ public class AppConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable) // Tắt CSRF (thường làm với REST API)
                 .authorizeHttpRequests(request -> request.requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/user/add", "/user/verify-account").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(manager -> manager.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider()).addFilterBefore(requestFilter, UsernamePasswordAuthenticationFilter.class);

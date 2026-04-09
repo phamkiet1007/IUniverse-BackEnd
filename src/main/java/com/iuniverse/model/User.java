@@ -1,8 +1,8 @@
 package com.iuniverse.model;
 
 import com.iuniverse.common.Gender;
+import com.iuniverse.common.Role;
 import com.iuniverse.common.UserStatus;
-import com.iuniverse.common.UserType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +11,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.io.Serializable;
@@ -51,28 +52,39 @@ public class User extends AbstractEntity<Long> implements UserDetails, Serializa
     private String password;
 
     @Enumerated(EnumType.STRING)
-    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
-    @Column(name = "user_type", length = 255)
-    private UserType userType;
+    @Column(name = "role", nullable = false, length = 50)
+    private Role role;
 
     @Enumerated(EnumType.STRING)
     @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "status", length = 255)
     private UserStatus status;
 
+    @Column(name = "otp_code", length = 10)
+    private String otpCode;
+
+    @Column(name = "otp_expiry_time")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date otpExpiryTime;
+
     // Chữ "user" ở đây chính là tên biến User bên trong class Address
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
     private Address address;
 
-    @OneToMany(mappedBy = "user")
-    private Set<UserHasRole> roles = new HashSet<>();
+    // Liên kết với Profile Teacher (Nếu có)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Teacher teacherProfile;
 
-    @OneToMany(mappedBy = "user")
-    private Set<GroupHasUser> groups = new HashSet<>();
+    // Liên kết với Profile Student (Nếu có)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private Student studentProfile;
+
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+
+        return List.of(new SimpleGrantedAuthority(role.name()));
     }
 
     @Override

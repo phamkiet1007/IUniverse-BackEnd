@@ -3,7 +3,9 @@ package com.iuniverse.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iuniverse.common.TokenType;
+import com.iuniverse.repository.TokenRepository;
 import com.iuniverse.service.JwtService;
+import com.iuniverse.service.TokenService;
 import com.iuniverse.service.UserServiceDetail;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -32,6 +34,7 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserServiceDetail userServiceDetail;
+    private final TokenService tokenService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -52,6 +55,18 @@ public class CustomizeRequestFilter extends OncePerRequestFilter {
             try {
                 username = jwtService.extractUsername(authHeader, TokenType.ACCESS_TOKEN);
                 log.info("Extracted username: {}", username);
+
+                //check if token exists
+                boolean isTokenActive = tokenService.existsByAccessToken(authHeader);
+                if (!isTokenActive) {
+                    log.warn("Token không tồn tại trong Database (Có thể đã Logout)");
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                    response.setContentType("application/json");
+                    response.setCharacterEncoding("UTF-8");
+                    response.getWriter().write(errorResponse("Token has been revoked or logged out"));
+                    return;
+                }
+
             } catch (AccessDeniedException e) {
                 log.error("Access denied, message = {}", e.getMessage());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

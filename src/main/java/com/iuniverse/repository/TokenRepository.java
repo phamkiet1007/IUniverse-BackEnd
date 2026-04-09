@@ -27,4 +27,6 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
     void deleteResetTokensByUsername(String username);
 
     Optional<Token> findByUsernameAndResetToken(String username, String resetToken);
+
+    Optional<Token> findByAccessToken(String accessToken);
 }

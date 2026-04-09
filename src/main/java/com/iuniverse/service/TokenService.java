@@ -47,4 +47,10 @@ public record TokenService(TokenRepository tokenRepository) {
     public void deleteResetTokensByUsername(String username) {
         tokenRepository.deleteResetTokensByUsername(username);
     }
+
+
+    public boolean existsByAccessToken(String accessToken) {
+        // Trả về true nếu tìm thấy, false nếu token đã bị xóa
+        return tokenRepository.findByAccessToken(accessToken).isPresent();
+    }
 }

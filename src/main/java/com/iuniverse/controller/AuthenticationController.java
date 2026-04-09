@@ -1,22 +1,21 @@
 package com.iuniverse.controller;
 
-import com.iuniverse.controller.request.LogoutRequest;
-import com.iuniverse.controller.request.RefreshTokenRequest;
-import com.iuniverse.controller.request.ResetPasswordRequest;
-import com.iuniverse.controller.request.SignInRequest;
+import com.iuniverse.controller.request.*;
 import com.iuniverse.controller.response.TokenResponse;
 import com.iuniverse.service.AuthenticationService;
+import com.iuniverse.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static org.springframework.http.HttpStatus.OK;
 
@@ -28,6 +27,7 @@ import static org.springframework.http.HttpStatus.OK;
 public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
+    private final UserService userService;
 
     @Operation(summary = "Get access token", description = "Get access & refresh token by username, password")
     @PostMapping("/access-token")
@@ -53,7 +53,7 @@ public class AuthenticationController {
 
     @Operation(summary = "Forgot password", description = "Send email to user to reset password")
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestBody String email) {
+    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
         return new ResponseEntity<>(authenticationService.forgotPassword(email), OK);
     }
 
@@ -68,5 +68,31 @@ public class AuthenticationController {
     @PostMapping("/change-password")
     public ResponseEntity<String> changePassword(@RequestBody @Valid ResetPasswordRequest request) {
         return new ResponseEntity<>(authenticationService.changePassword(request), OK);
+    }
+
+    @Operation(summary = "Verify OTP", description = "Active account by OTP")
+    @PostMapping("/verify-account")
+    public ResponseEntity<Object> verifyAccount(@RequestBody @Valid VerifyOtpRequest request) {
+        log.info("Verifying OTP for email: {}", request.getEmail());
+
+        userService.verifyOtp(request.getEmail(), request.getOtp());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Account activated successfully!");
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Resend OTP", description = "Resend OTP if the old one is expired")
+    @PostMapping("/resend-otp")
+    public ResponseEntity<Object> resendOtp(@RequestParam String email) {
+        log.info("Receive request resend OTP cho email: {}", email);
+
+        userService.resendOtp(email);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "A new OTP has been sent to your email!");
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 }

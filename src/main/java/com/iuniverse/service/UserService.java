@@ -22,5 +22,9 @@ public interface UserService {
     void update(UserUpdateRequest req);
     void delete(Long id);
 
+    void verifyOtp(String email, String otp);
+
+    void resendOtp(String email);
+
 
 }

@@ -3,6 +3,7 @@ package com.iuniverse.controller;
 import com.iuniverse.controller.request.UserCreationRequest;
 import com.iuniverse.controller.request.ResetPasswordRequest;
 import com.iuniverse.controller.request.UserUpdateRequest;
+import com.iuniverse.controller.request.VerifyOtpRequest;
 import com.iuniverse.controller.response.UserPageResponse;
 import com.iuniverse.controller.response.UserResponse;
 import com.iuniverse.service.UserService;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +33,7 @@ public class UserController {
     private final UserService userService;
 
     @Operation(summary = "Get all users", description = "Retrieve a list of all users in the system")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/list")
     public Map<String, Object> getAllUsers(@RequestParam(required = false) String keyword,
                                            @RequestParam(required = false) String sortBy,
@@ -90,6 +93,7 @@ public class UserController {
     }
 
     @Operation(summary = "Delete user", description = "Remove a user from the system by their ID")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")
     public Map<String, Object> deleteUser(@PathVariable Long id) {
         log.info("Deleting user with ID {}", id);
@@ -102,5 +106,7 @@ public class UserController {
         result.put("data", "");
         return result;
     }
+
+
 
 }

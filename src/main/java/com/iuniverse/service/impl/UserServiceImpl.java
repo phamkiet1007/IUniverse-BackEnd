@@ -1,5 +1,6 @@
 package com.iuniverse.service.impl;
 
+import com.iuniverse.common.Role;
 import com.iuniverse.common.UserStatus;
 import com.iuniverse.controller.request.AddressRequest;
 import com.iuniverse.controller.request.UserCreationRequest;
@@ -10,9 +11,12 @@ import com.iuniverse.controller.response.UserResponse;
 import com.iuniverse.exception.InvalidDataException;
 import com.iuniverse.exception.ResourceNotFoundException;
 import com.iuniverse.model.Address;
+import com.iuniverse.model.Student;
+import com.iuniverse.model.Teacher;
 import com.iuniverse.model.User;
 import com.iuniverse.repository.AddressRepository;
 import com.iuniverse.repository.UserRepository;
+import com.iuniverse.service.EmailService;
 import com.iuniverse.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +29,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -38,6 +44,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final AddressRepository addressRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Override
     public UserPageResponse findAll(String keyword, String sortBy, int page, int size) {
@@ -139,14 +146,35 @@ public class UserServiceImpl implements UserService {
         user.setEmail(req.getEmail());
         user.setPhoneNumber(req.getPhoneNumber());
         user.setUsername(req.getUsername());
-        user.setUserType(req.getUserType());
+
+        user.setPassword(passwordEncoder.encode(req.getPassword()));
+
+        user.setRole(req.getRole());
         user.setStatus(UserStatus.NONE);
 
-        userRepository.save(user);
-        log.info("User saved successfully: {}", user);
+        //generate otp within 5 mins live
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        user.setOtpCode(otp);
+        user.setOtpExpiryTime(new Date(System.currentTimeMillis() + (5 * 60 * 1000)));
 
-        if(user.getId() != null) {
-            log.info("Saving address for user: {}", user.getId());
+        if (req.getRole() == Role.STUDENT) {
+            if (StringUtils.isBlank(req.getStudentCode())) {
+                throw new InvalidDataException("Student code is required for role STUDENT!");
+            }
+            Student studentProfile = new Student();
+            studentProfile.setUser(user);
+            studentProfile.setStudentCode(req.getStudentCode());
+            user.setStudentProfile(studentProfile); // Gắn con vào mẹ -> Hibernate sẽ tự lưu
+
+        } else if (req.getRole() == Role.TEACHER) {
+            Teacher teacherProfile = new Teacher();
+            teacherProfile.setUser(user);
+            teacherProfile.setDepartment(req.getDepartment());
+            user.setTeacherProfile(teacherProfile);
+        }
+
+        if(req.getAddress() != null) {
+            log.info("Preparing address for user...");
             Address address = new Address();
             AddressRequest addressReq = req.getAddress();
 
@@ -156,13 +184,52 @@ public class UserServiceImpl implements UserService {
             address.setBuilding(addressReq.getBuilding());
             address.setAddressType(addressReq.getAddressType());
 
+            // Quan trọng: Gắn User vào Address và Gắn Address vào User
             address.setUser(user);
+            user.setAddress(address);
+        }
 
-            addressRepository.save(address);
-            log.info("Address saved successfully: {}", address);
+        userRepository.save(user);
+        log.info("User, Profile and Address saved successfully: {}", user);
+
+        try {
+            emailService.sendOtpEmail(user.getEmail(), otp);
+            log.info("OTP Email sent to: {}", user.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to send OTP email", e);
+            // Có thể throw Exception hoặc kệ nó tùy logic của bạn
         }
 
         return user.getId();
+    }
+
+    //validate otp
+    @Transactional(rollbackFor = Exception.class)
+    public void verifyOtp(String email, String otp) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new ResourceNotFoundException("User not found!");
+        }
+
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            throw new InvalidDataException("Account is already activated!");
+        }
+
+        if (user.getOtpCode() == null || !user.getOtpCode().equals(otp)) {
+            throw new InvalidDataException("Invalid OTP code!");
+        }
+
+        if (user.getOtpExpiryTime().before(new Date())) {
+            throw new InvalidDataException("OTP has expired!");
+        }
+
+        // Kích hoạt tài khoản và xóa OTP đi cho an toàn
+        user.setStatus(UserStatus.ACTIVE);
+        user.setOtpCode(null);
+        user.setOtpExpiryTime(null);
+
+        userRepository.save(user);
+        log.info("Account activated successfully for email: {}", email);
     }
 
     @Override
@@ -178,6 +245,8 @@ public class UserServiceImpl implements UserService {
         user.setEmail(req.getEmail());
         user.setPhoneNumber(req.getPhoneNumber());
         user.setUsername(req.getUsername());
+
+
 
         userRepository.save(user);
         log.info("User updated successfully: {}", user);
@@ -246,7 +315,7 @@ public class UserServiceImpl implements UserService {
                     .email(user.getEmail())
                     .phoneNumber(user.getPhoneNumber())
                     .username(user.getUsername())
-                    .userType(user.getUserType())
+                    .role(user.getRole())
                     .status(user.getStatus() != null ? user.getStatus().name() : null)
                     .address(addressDto)
                     .build();
@@ -259,5 +328,34 @@ public class UserServiceImpl implements UserService {
         response.setTotalPages(userEntities.getTotalPages());
         response.setUsers(userResponseList);
         return response;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resendOtp(String email) {
+        log.info("Resend OTP for email: {}", email);
+
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new ResourceNotFoundException("User not found!");
+        }
+
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            throw new InvalidDataException("Account is already activated. Please login!");
+        }
+
+        String newOtp = String.format("%06d", new Random().nextInt(999999));
+        user.setOtpCode(newOtp);
+        user.setOtpExpiryTime(new Date(System.currentTimeMillis() + (5 * 60 * 1000)));
+
+        userRepository.save(user);
+        log.info("Đã tạo OTP mới cho user: {}", user.getEmail());
+
+        try {
+            emailService.sendOtpEmail(user.getEmail(), newOtp);
+            log.info("Resend OTP Email sent to: {}", user.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to resend OTP email", e);
+        }
     }
 }
