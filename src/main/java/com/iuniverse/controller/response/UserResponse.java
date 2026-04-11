@@ -2,7 +2,7 @@ package com.iuniverse.controller.response;
 
 
 import com.iuniverse.common.Gender;
-import com.iuniverse.common.UserType;
+import com.iuniverse.common.Role;
 import com.iuniverse.controller.request.AddressRequest;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +26,6 @@ public class UserResponse implements Serializable {
     private String phoneNumber;
     private String email;
     private AddressRequest address;
-    private UserType userType;
+    private Role role;
     private String status;
 }

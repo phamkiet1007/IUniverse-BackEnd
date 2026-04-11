@@ -1,6 +1,5 @@
 package com.iuniverse.model;
 
-import com.iuniverse.controller.request.AddressRequest;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,11 +12,7 @@ import java.util.Date;
 @Setter
 @Entity
 @Table(name = "tbl_address")
-public class AddressEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
-    private Long id;
+public class Address extends  AbstractEntity<Long> {
 
     @Column(name = "street", length = 255)
     private String street;
@@ -34,17 +29,7 @@ public class AddressEntity {
     @Column(name = "address_type", length = 255)
     private Integer addressType;
 
-    @Column(name = "created_at", length = 255)
-    @CreationTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date createdAt;
-
-    @Column(name = "updated_at", length = 255)
-    @UpdateTimestamp
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date updatedAt;
-
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private UserEntity user;
+    private User user;
 }

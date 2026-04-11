@@ -1,7 +1,7 @@
 package com.iuniverse.controller.request;
 
 import com.iuniverse.common.Gender;
-import com.iuniverse.common.UserType;
+import com.iuniverse.common.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -29,6 +29,6 @@ public class UserUpdateRequest {
     @Email(message = "Email invalid")
     private String email;
     private AddressRequest address;
-    private UserType userType;
+    private Role role;
     private String status;
 }

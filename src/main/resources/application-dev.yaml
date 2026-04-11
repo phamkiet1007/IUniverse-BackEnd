@@ -8,7 +8,7 @@ spring:
   devtools:
     add-properties: true
   datasource:
-    url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5432}/${DATABASE_NAME:postgres}
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:${DATABASE_PORT:5433}/${DATABASE_NAME:postgres}
     username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:password}
     hikari: # Connection poll
@@ -17,6 +17,17 @@ spring:
       validation-timeout: 5000  # 5 giây
       minimum-idle: 5
       maximum-pool-size: 20
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   jpa:
     show-sql: false
     hibernate:
@@ -35,4 +46,8 @@ openapi:
     version: 1.0.0
 
 jwt:
-  secretKey: abc@123
+  expiryTimeInMinutes: 5
+  expiryTimeInDays: 14
+  accessKey: ${JWT_ACCESS_KEY}
+  refreshKey: ${JWT_REFRESH_KEY}
+  resetKey: ${JWT_RESET_KEY}

@@ -5,8 +5,8 @@ spring:
   devtools:
     add-properties: true
   datasource:
-    url: jdbc:postgresql://${DATABASE_URL:localhost:5432/postgres}
-    username: ${DATABASE_USERNAME:dev}
+    url: jdbc:postgresql://${DATABASE_URL:localhost:5433/postgres}
+    username: ${DATABASE_USERNAME:postgres}
     password: ${DATABASE_PASSWORD:password}
     hikari: # Connection poll
       max-lifetime: 300000      # 5 phút

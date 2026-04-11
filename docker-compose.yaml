@@ -12,20 +12,23 @@ services:
       - postgres:/data/postgres
       - ./initdb.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
-      - '5432:5432'
+      - '5433:5432'
     networks:
       - default
 
   backend-service:
     container_name: backend-service
+    profiles: ["prod"]
     build:
       context: ./
       dockerfile: Dockerfile
     ports:
-      - "8080:8080"
+      - "8081:8081"
     env_file:
       - .env
     environment:
+      SERVER_PORT: 8081
+      SPRING_PROFILES_ACTIVE: dev
       DATABASE_HOST: postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: postgres

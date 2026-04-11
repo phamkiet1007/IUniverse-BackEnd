@@ -1,8 +1,9 @@
 package com.iuniverse.controller;
 
 import com.iuniverse.controller.request.UserCreationRequest;
-import com.iuniverse.controller.request.UserPasswordRequest;
+import com.iuniverse.controller.request.ResetPasswordRequest;
 import com.iuniverse.controller.request.UserUpdateRequest;
+import com.iuniverse.controller.request.VerifyOtpRequest;
 import com.iuniverse.controller.response.UserPageResponse;
 import com.iuniverse.controller.response.UserResponse;
 import com.iuniverse.service.UserService;
@@ -14,11 +15,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -32,6 +33,7 @@ public class UserController {
     private final UserService userService;
 
     @Operation(summary = "Get all users", description = "Retrieve a list of all users in the system")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/list")
     public Map<String, Object> getAllUsers(@RequestParam(required = false) String keyword,
                                            @RequestParam(required = false) String sortBy,
@@ -91,6 +93,7 @@ public class UserController {
     }
 
     @Operation(summary = "Delete user", description = "Remove a user from the system by their ID")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @DeleteMapping("/{id}")
     public Map<String, Object> deleteUser(@PathVariable Long id) {
         log.info("Deleting user with ID {}", id);
@@ -104,17 +107,6 @@ public class UserController {
         return result;
     }
 
-    @Operation(summary = "Change password", description = "Dedicated API for changing a user's password")
-    @PatchMapping("/change-password")
-    public Map<String, Object> changePassword(@RequestBody @Valid UserPasswordRequest request) {
-        log.info("Changing password for user {}", request);
-        userService.changePassword(request);
 
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("status", HttpStatus.NO_CONTENT.value());
-        result.put("message", "Password updated successfully");
-        result.put("data", "");
-        return result;
 
-    }
 }
