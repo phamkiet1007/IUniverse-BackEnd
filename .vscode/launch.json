@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "BackendServiceApplication",
+            "request": "launch",
+            "mainClass": "com.iuniverse.BackendServiceApplication",
+            "projectName": "backend-service",
+            "envFile": "${workspaceFolder}/d41d8cd9.env"
+        },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        }
+    ]
+}
