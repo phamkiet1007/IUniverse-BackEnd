@@ -1,10 +1,11 @@
-// controller/StudentCourseController.java
+package com.iuniverse.controller;
+
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import lombok.RequiredArgsConstructor;
 import com.iuniverse.service.EnrollmentService;
 import com.iuniverse.controller.request.EnrollmentRequest;
-// Nếu bạn có class SecurityUtils thì import vào, không thì tạm thời comment dòng đó lại
+
 @RestController
 @RequestMapping("/api/v1/student")
 @RequiredArgsConstructor
@@ -14,8 +15,9 @@ public class StudentCourseController {
 
     @PostMapping("/enroll")
     public ResponseEntity<String> enroll(@RequestBody EnrollmentRequest request) {
-        // Giả sử bạn lấy studentId từ Token, ở đây mình ví dụ truyền cứng hoặc lấy từ Context
-        Long currentStudentId = SecurityUtils.getCurrentUserId(); 
+        // Tạm thời fix cứng studentId = 1 để test logic. 
+        // Khi nào có SecurityUtils thì thay lại: Long currentStudentId = SecurityUtils.getCurrentUserId();
+        Long currentStudentId = 1L; 
         
         enrollmentService.enrollByCode(request.getJoinCode(), currentStudentId);
         

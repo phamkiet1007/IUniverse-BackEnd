@@ -11,6 +11,8 @@ import com.iuniverse.exception.ResourceNotFoundException;
 import com.iuniverse.exception.InvalidDataException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 public class EnrollmentServiceImpl implements EnrollmentService {
@@ -20,13 +22,15 @@ public class EnrollmentServiceImpl implements EnrollmentService {
     private final UserRepository userRepository;
 
     @Override
+    @Transactional // Nên thêm cái này để đảm bảo dữ liệu nhất quán khi lưu
     public void enrollByCode(String joinCode, Long studentId) {
         // 1. Tìm lớp theo mã join_code
         Course course = courseRepository.findByJoinCode(joinCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lớp học với mã: " + joinCode));
 
         // 2. Kiểm tra xem sinh viên đã tham gia lớp này chưa
-        if (enrollmentRepository.existsByStudentIdAndCourseId(studentId, course.getId())) {
+        // Ép kiểu (Long) vì AbstractEntity trả về Serializable
+        if (enrollmentRepository.existsByStudentIdAndCourseId(studentId, (Long) course.getId())) {
             throw new InvalidDataException("Bạn đã tham gia lớp học này rồi!");
         }
 
