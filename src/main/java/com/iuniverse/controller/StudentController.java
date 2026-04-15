@@ -29,7 +29,7 @@ public class StudentController {
     public ResponseEntity<Object> enrollCourse(@RequestParam String joinCode) {
 
         Long studentId = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).getId();
-        enrollmentService.enrollCourse(joinCode, studentId);
+        enrollmentService.enrollByCode(joinCode, studentId);
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", HttpStatus.CREATED.value());

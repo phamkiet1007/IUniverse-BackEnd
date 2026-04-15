@@ -9,8 +9,12 @@ import java.util.List;
 @Repository
 public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
-    //Kiểm tra xem sinh viên đã có trong lớp chưa để tránh việc join 2 lần
+    // check duplicate
     boolean existsByStudentUserIdAndCourseId(Long studentId, Long courseId);
 
+    // teacher dùng
     List<Enrollment> findByCourseId(Long courseId);
+
+    // thêm dòng này cho student
+    List<Enrollment> findByStudentUserId(Long studentId);
 }
