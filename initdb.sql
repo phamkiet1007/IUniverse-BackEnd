@@ -27,6 +27,9 @@ DROP TABLE IF EXISTS "tbl_address" CASCADE;
 DROP TABLE IF EXISTS "tbl_user" CASCADE;
 DROP TABLE IF EXISTS "tbl_token" CASCADE;
 
+DROP TABLE IF EXISTS "tbl_question_option" CASCADE;
+DROP TABLE IF EXISTS "tbl_question" CASCADE;
+
 -- ==============================================================================
 -- 2. TẠO CÁC BẢNG CỐT LÕI (Core & Auth Tối Giản)
 -- ==============================================================================
@@ -221,6 +224,15 @@ CREATE TABLE "tbl_student_answer" (
                                       "earned_points" DOUBLE PRECISION,
                                       CONSTRAINT "fk_answer_submission" FOREIGN KEY ("submission_id") REFERENCES "tbl_submission"("id") ON DELETE CASCADE,
                                       CONSTRAINT "fk_answer_question" FOREIGN KEY ("question_id") REFERENCES "tbl_question"("id") ON DELETE CASCADE
+);
+
+CREATE TABLE "tbl_question_option" (
+                                       "question_id" BIGINT NOT NULL,
+                                       "option_text" VARCHAR(255),
+                                       CONSTRAINT "fk_question_option"
+                                           FOREIGN KEY ("question_id")
+                                               REFERENCES "tbl_question" ("id")
+                                               ON DELETE CASCADE
 );
 
 -- ==============================================================================
