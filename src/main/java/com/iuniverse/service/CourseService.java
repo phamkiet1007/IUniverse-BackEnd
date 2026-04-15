@@ -146,7 +146,17 @@ public class CourseService {
         }
 
         //ON DELETE CASCADE trong SQL, khi xóa Course,
-        //toàn bộ Module, Material, ProblemSet, Question, Option bên trong sẽ tự động "bay màu" theo!
+        //toàn bộ Module, Material, ProblemSet, Question, Option sẽ bị xóa
         courseRepository.delete(course);
+    }
+
+    public Course getValidCourseForTeacher(Long courseId, Long currentTeacherId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with ID: " + courseId));
+
+        if (!course.getInstructor().getUser().getId().equals(currentTeacherId)) {
+            throw new AccessDeniedException("Access denied! You are not authorized to access this course.");
+        }
+        return course;
     }
 }

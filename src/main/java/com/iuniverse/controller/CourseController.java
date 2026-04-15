@@ -3,10 +3,7 @@ package com.iuniverse.controller;
 import com.iuniverse.controller.request.*;
 import com.iuniverse.controller.response.CourseResponse;
 import com.iuniverse.controller.response.UserResponse;
-import com.iuniverse.service.CourseService;
-import com.iuniverse.service.ModuleService;
-import com.iuniverse.service.ProblemSetService;
-import com.iuniverse.service.UserService;
+import com.iuniverse.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -36,6 +33,7 @@ public class CourseController {
     private final UserService userService;
     private final ModuleService moduleService;
     private final ProblemSetService problemSetService;
+    private final EnrollmentService enrollmentService;
 
     @Operation(summary = "Create new course", description = "Teacher create course & system auto generate Join Code")
     @PreAuthorize("hasAuthority('TEACHER')")
@@ -349,6 +347,23 @@ public class CourseController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("status", HttpStatus.OK.value());
         result.put("message", "Delete question successfully!");
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Get course students", description = "Teacher views all students enrolled in their course")
+    @PreAuthorize("hasAuthority('TEACHER')")
+    @GetMapping("/{id}/students")
+    public ResponseEntity<Object> getCourseStudents(@PathVariable("id") Long courseId) {
+
+        Long teacherId = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).getId();
+        List<String> students = enrollmentService.getStudentsInCourse(courseId, teacherId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Get all students in this course successfully!");
+        result.put("total_students", students.size());
+        result.put("data", students);
+
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 }
