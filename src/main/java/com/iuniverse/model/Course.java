@@ -3,6 +3,8 @@ package com.iuniverse.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Date;
+
 @Entity
 @Table(name = "tbl_course")
 @Getter
@@ -10,22 +12,29 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Course extends AbstractEntity {
+public class Course {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "instructor_id", referencedColumnName = "user_id", nullable = false)
+    private Teacher instructor;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "semester_id", referencedColumnName = "id", nullable = false)
+    private Semester semester;
 
     @Column(name = "course_name", nullable = false)
     private String courseName;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "semester_id")
-    private Integer semesterId;
-
-    @Column(name = "join_code", unique = true, nullable = false)
+    @Column(name = "join_code", nullable = false, unique = true, length = 10)
     private String joinCode;
 
-    // Nếu bạn muốn lưu ai là giáo viên dạy lớp này
-    @ManyToOne
-    @JoinColumn(name = "teacher_id")
-    private User teacher;
+    @Column(name = "created_at", insertable = false, updatable = false)
+    private Date createdAt;
 }

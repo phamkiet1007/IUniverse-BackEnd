@@ -1,21 +1,36 @@
-// model/Enrollment.java
 package com.iuniverse.model;
 
 import jakarta.persistence.*;
-import lombok.Data;
-import java.time.LocalDateTime;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.util.Date;
+
 @Entity
 @Table(name = "tbl_enrollment")
-@Data
-public class Enrollment extends AbstractEntity { // Kế thừa để có id, createdDate nếu cần
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Enrollment {
 
-    @ManyToOne
-    @JoinColumn(name = "student_id")
-    private User student; // Hoặc Student student tùy cách bạn map User
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "course_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "student_id", referencedColumnName = "user_id", nullable = false)
+    private Student student;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id", referencedColumnName = "id", nullable = false)
     private Course course;
 
-    private LocalDateTime enrollDate = LocalDateTime.now();
+    @Column(name = "status", length = 20)
+    private String status;
+
+    @CreationTimestamp
+    @Column(name = "enrolled_at", updatable = false)
+    private Date enrolledAt;
 }
