@@ -66,8 +66,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new UsernameNotFoundException("User not found");
         }
 
-        String accessToken = jwtService.generateAccessToken(user.getId(), request.getUsername(), null);
-        String refreshToken = jwtService.generateRefreshToken(user.getId(), request.getUsername(), null);
+        String accessToken = jwtService.generateAccessToken(user.getId(), request.getUsername(), user.getAuthorities());
+        String refreshToken = jwtService.generateRefreshToken(user.getId(), request.getUsername(), user.getAuthorities());
 
         String deviceInfo = request.getPlatform();
 

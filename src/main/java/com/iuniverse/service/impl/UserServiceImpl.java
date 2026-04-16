@@ -109,7 +109,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserResponse findByUsername(String username) {
-        return null;
+        User user = userRepository.findByUsername(username);
+
+        if (user == null) {
+            throw new ResourceNotFoundException("user not found with username: " + username);
+        }
+
+        return UserResponse.builder()
+                .id(user.getId())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .email(user.getEmail())
+                .username(user.getUsername())
+                .role(user.getRole())
+                .build();
     }
 
     //dùng cho reset-token
