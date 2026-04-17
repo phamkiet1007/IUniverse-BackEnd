@@ -1,18 +1,20 @@
 package com.iuniverse.controller;
 
+import com.iuniverse.controller.request.SubmissionRequest;
 import com.iuniverse.controller.response.CourseResponse;
 import com.iuniverse.model.Course;
 import com.iuniverse.service.EnrollmentService;
+import com.iuniverse.service.SubmissionService;
 import com.iuniverse.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
@@ -28,6 +30,7 @@ public class StudentController {
 
     private final EnrollmentService enrollmentService;
     private final UserService userService;
+    private final SubmissionService submissionService;
 
     @Operation(summary = "Enroll in a course", description = "Student uses Join Code to enter a course")
     @PreAuthorize("hasAuthority('STUDENT')")
@@ -82,5 +85,49 @@ public class StudentController {
         result.put("data", courseResponses);
 
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Submit Problem Set", description = "Student submits their answers for auto-grading")
+    @PreAuthorize("hasAuthority('STUDENT')")
+    @PostMapping("/problem-set/{psId}/submit")
+    public ResponseEntity<Object> submitProblemSet(
+            @PathVariable("psId") Long problemSetId,
+            @RequestBody @Valid SubmissionRequest request,
+            Authentication authentication
+    ) {
+        String username = authentication.getName();
+        Long studentId = userService.findByUsername(username).getId();
+
+        log.info("Student {} is submitting problem set {}", username, problemSetId);
+
+        Long submissionId = submissionService.submitAndGrade(problemSetId, request, studentId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.CREATED.value());
+        result.put("message", "Submit successfully!");
+        result.put("submissionId", submissionId);
+
+        return new ResponseEntity<>(result, HttpStatus.CREATED);
+    }
+
+    @Operation(summary = "View Submission Result", description = "Student views their graded submission")
+    @PreAuthorize("hasAuthority('STUDENT')")
+    @GetMapping("/submission/{submissionId}")
+    public ResponseEntity<Object> getSubmissionResult(
+            @PathVariable Long submissionId,
+            Authentication authentication
+    ) {
+        String username = authentication.getName();
+        Long studentId = userService.findByUsername(username).getId();
+
+        com.iuniverse.controller.response.SubmissionDetailResponse resultData =
+                submissionService.getSubmissionResult(submissionId, studentId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Get submission result successfully!");
+        result.put("data", resultData);
+
+        return ResponseEntity.ok(result);
     }
 }

@@ -1,5 +1,6 @@
 package com.iuniverse.service;
 
+import com.iuniverse.common.QuestionType;
 import com.iuniverse.controller.request.ProblemSetRequest;
 import com.iuniverse.controller.request.QuestionRequest;
 import com.iuniverse.exception.ResourceNotFoundException;
@@ -48,7 +49,7 @@ public class ProblemSetService {
             for (QuestionRequest qReq : req.getQuestions()) {
                 Question question = Question.builder()
                         .content(qReq.getContent())
-                        .type(qReq.getType())
+                        .type(QuestionType.valueOf(qReq.getType().trim().toUpperCase()))
                         .correctAns(qReq.getCorrectAns())
                         .points(qReq.getPoints())
                         .options(qReq.getOptions())
@@ -61,8 +62,6 @@ public class ProblemSetService {
         return problemSetRepository.save(problemSet).getId();
     }
 
-    // Cần inject thêm QuestionRepository vào class này
-    // private final QuestionRepository questionRepository;
 
     // --- PROBLEM SET LOGIC ---
     @Transactional
@@ -97,7 +96,7 @@ public class ProblemSetService {
 
         Question question = Question.builder()
                 .content(req.getContent())
-                .type(req.getType())
+                .type(QuestionType.valueOf(req.getType().trim().toUpperCase()))
                 .correctAns(req.getCorrectAns())
                 .points(req.getPoints())
                 .options(req.getOptions())
@@ -117,7 +116,7 @@ public class ProblemSetService {
         }
 
         question.setContent(req.getContent());
-        question.setType(req.getType());
+        question.setType(QuestionType.valueOf(req.getType().trim().toUpperCase()));
         question.setCorrectAns(req.getCorrectAns());
         question.setPoints(req.getPoints());
         question.setOptions(req.getOptions());
