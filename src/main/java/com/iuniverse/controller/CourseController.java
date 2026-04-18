@@ -3,6 +3,7 @@ package com.iuniverse.controller;
 import com.iuniverse.controller.request.*;
 import com.iuniverse.controller.response.CourseResponse;
 import com.iuniverse.controller.response.UserResponse;
+import com.iuniverse.model.Material;
 import com.iuniverse.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,6 +38,8 @@ public class CourseController {
     private final ProblemSetService problemSetService;
     private final EnrollmentService enrollmentService;
     private final SubmissionService submissionService;
+    private final FileUploadService fileUploadService;
+    private final MaterialService materialService;
 
     @Operation(summary = "Create new course", description = "Teacher create course & system auto generate Join Code")
     @PreAuthorize("hasAuthority('TEACHER')")
@@ -406,5 +411,23 @@ public class CourseController {
         result.put("data", data);
 
         return ResponseEntity.ok(result);
+    }
+
+    @PostMapping(value = "/upload-material", consumes = "multipart/form-data")
+    @PreAuthorize("hasAuthority('TEACHER')")
+    public ResponseEntity<Object> uploadMaterial(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("moduleId") Long moduleId,
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "type", defaultValue = "PDF") String type
+    ) {
+        Material savedMaterial = materialService.uploadAndLinkToModule(file, moduleId, title, type);
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("status", 200);
+        response.put("message", "Upload và gán tài liệu vào Module thành công!");
+        response.put("data", savedMaterial);
+
+        return ResponseEntity.ok(response);
     }
 }

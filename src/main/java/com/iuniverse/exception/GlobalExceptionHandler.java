@@ -223,4 +223,37 @@ public class GlobalExceptionHandler {
         return errorResponse;
     }
 
+    /**
+     * Handle exception when uploading file to Cloudinary fails
+     */
+    @ExceptionHandler(FileUploadException.class)
+    @ResponseStatus(BAD_REQUEST)
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "400", description = "Upload Failed",
+                    content = {@Content(mediaType = APPLICATION_JSON_VALUE,
+                            examples = @ExampleObject(
+                                    name = "400 Response for Upload",
+                                    summary = "Handle exception when cloud upload fails",
+                                    value = """
+                                            {
+                                              "timestamp": "2024-04-18T23:15:35.321+00:00",
+                                              "status": 400,
+                                              "path": "/api/v1/teacher/upload-material",
+                                              "error": "Bad Request",
+                                              "message": "Cannot upload file onto Cloud: ..."
+                                            }
+                                            """
+                            ))})
+    })
+    public ErrorResponse handleFileUploadException(FileUploadException e, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse();
+        errorResponse.setTimestamp(new Date());
+        errorResponse.setPath(request.getDescription(false).replace("uri=", ""));
+        errorResponse.setStatus(BAD_REQUEST.value());
+        errorResponse.setError(BAD_REQUEST.getReasonPhrase());
+        errorResponse.setMessage(e.getMessage());
+
+        return errorResponse;
+    }
+
 }
