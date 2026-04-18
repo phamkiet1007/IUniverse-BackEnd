@@ -2,6 +2,7 @@ package com.iuniverse.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.util.Date;
 
@@ -27,6 +28,8 @@ public class Material {
     @Column(name = "content_url", nullable = false, columnDefinition = "TEXT")
     private String contentUrl;
 
+    @CreationTimestamp
+    @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "created_at", insertable = false, updatable = false)
     private Date createdAt;
 }
