@@ -1,5 +1,7 @@
 package com.iuniverse.service;
 
+import com.iuniverse.common.UserStatus;
+import com.iuniverse.controller.request.StudentRegisterRequest;
 import com.iuniverse.controller.request.UserCreationRequest;
 import com.iuniverse.controller.request.UserUpdateRequest;
 import com.iuniverse.controller.response.UserPageResponse;
@@ -16,15 +18,15 @@ public interface UserService {
 //    User getByUsername(String username);
 
     User getUserByEmail(String email);
-    Long save(UserCreationRequest req);
 
     Long saveUser(User user);
-    void update(UserUpdateRequest req);
+    void update(UserUpdateRequest req, String currentUsername);
     void delete(Long id);
 
     void verifyOtp(String email, String otp);
 
     void resendOtp(String email);
 
+    void registerStudent(StudentRegisterRequest req);
 
 }
