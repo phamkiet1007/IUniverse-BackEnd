@@ -425,7 +425,7 @@ public class CourseController {
 
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("status", 200);
-        response.put("message", "Upload và gán tài liệu vào Module thành công!");
+        response.put("message", "Upload and attach material successfully!");
         response.put("data", savedMaterial);
 
         return ResponseEntity.ok(response);
