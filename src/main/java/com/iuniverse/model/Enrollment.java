@@ -19,6 +19,7 @@ public class Enrollment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // 🔥 IMPORTANT: Student uses shared PK = user_id
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", referencedColumnName = "user_id", nullable = false)
     private Student student;

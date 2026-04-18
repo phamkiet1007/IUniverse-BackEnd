@@ -1,5 +1,6 @@
 package com.iuniverse.model;
 
+import com.iuniverse.common.QuestionType;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,8 +26,9 @@ public class Question {
     @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
-    @Column(name = "type", nullable = false, length = 50)
-    private String type; //"MULTIPLE_CHOICE", "SHORT_ANSWER"
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", length = 20)
+    private QuestionType type;
 
     @Column(name = "correct_ans", nullable = false, columnDefinition = "TEXT")
     private String correctAns;

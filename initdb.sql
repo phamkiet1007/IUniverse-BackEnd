@@ -222,6 +222,7 @@ CREATE TABLE "tbl_student_answer" (
                                       "student_response" TEXT,
                                       "is_correct" BOOLEAN,
                                       "earned_points" DOUBLE PRECISION,
+                                      "teacher_comment" TEXT,
                                       CONSTRAINT "fk_answer_submission" FOREIGN KEY ("submission_id") REFERENCES "tbl_submission"("id") ON DELETE CASCADE,
                                       CONSTRAINT "fk_answer_question" FOREIGN KEY ("question_id") REFERENCES "tbl_question"("id") ON DELETE CASCADE
 );

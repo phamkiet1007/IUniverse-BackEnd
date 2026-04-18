@@ -34,6 +34,7 @@ public class CourseController {
     private final ModuleService moduleService;
     private final ProblemSetService problemSetService;
     private final EnrollmentService enrollmentService;
+    private final SubmissionService submissionService;
 
     @Operation(summary = "Create new course", description = "Teacher create course & system auto generate Join Code")
     @PreAuthorize("hasAuthority('TEACHER')")
@@ -365,5 +366,45 @@ public class CourseController {
         result.put("data", students);
 
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Grade a student submission", description = "Teacher updates scores for short answers/essays")
+    @PreAuthorize("hasAuthority('TEACHER')")
+    @PutMapping("/submission/{id}/grade")
+    public ResponseEntity<Object> gradeSubmission(
+            @PathVariable("id") Long submissionId,
+            @RequestBody GradeRequest request,
+            Authentication authentication
+    ) {
+        Long teacherId = userService.findByUsername(authentication.getName()).getId();
+
+        submissionService.gradeSubmissionManually(submissionId, request, teacherId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Update grade successfully!");
+
+        return ResponseEntity.ok(result);
+    }
+
+    @Operation(summary = "Get all submissions for a Problem Set", description = "Teacher views list of students who submitted")
+    @PreAuthorize("hasAuthority('TEACHER')")
+    @GetMapping("/problem-set/{psId}/submissions")
+    public ResponseEntity<Object> getSubmissionsByProblemSet(
+            @PathVariable Long psId,
+            Authentication authentication
+    ) {
+        Long teacherId = userService.findByUsername(authentication.getName()).getId();
+
+        List<com.iuniverse.controller.response.SubmissionSummaryResponse> data =
+                submissionService.getSubmissionsByProblemSet(psId, teacherId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Get all submissions for this problem set successfully!");
+        result.put("count", data.size());
+        result.put("data", data);
+
+        return ResponseEntity.ok(result);
     }
 }
