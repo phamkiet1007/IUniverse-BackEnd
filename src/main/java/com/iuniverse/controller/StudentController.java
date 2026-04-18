@@ -16,6 +16,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import com.iuniverse.controller.request.RatingRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+import com.iuniverse.service.CourseService;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,7 +37,7 @@ public class StudentController {
     private final EnrollmentService enrollmentService;
     private final UserService userService;
     private final SubmissionService submissionService;
-
+private final CourseService courseService;
     @Operation(summary = "Enroll in a course", description = "Student uses Join Code to enter a course")
     @PreAuthorize("hasAuthority('STUDENT')")
     @PostMapping("/course/enroll")
@@ -130,4 +136,20 @@ public class StudentController {
 
         return ResponseEntity.ok(result);
     }
+
+@PostMapping("/courses/{id}/ratings")
+@PreAuthorize("hasAuthority('STUDENT')")
+public ResponseEntity<?> rateCourse(
+        @PathVariable Long id,
+        @RequestBody RatingRequest request,
+        Authentication auth) {
+
+    Long studentId = userService.findByUsername(auth.getName()).getId();
+
+    request.setCourseId(id);
+
+    courseService.addRating(studentId, id, request);
+
+    return ResponseEntity.ok("Rated successfully");
+}
 }

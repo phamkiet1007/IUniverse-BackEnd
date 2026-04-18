@@ -4,9 +4,12 @@ import com.iuniverse.controller.request.CourseRequest;
 import com.iuniverse.controller.response.CourseResponse;
 import com.iuniverse.exception.ResourceNotFoundException;
 import com.iuniverse.model.Course;
+import com.iuniverse.model.Rating;
 import com.iuniverse.model.Semester;
 import com.iuniverse.model.Teacher;
 import com.iuniverse.repository.CourseRepository;
+import com.iuniverse.repository.EnrollmentRepository;
+import com.iuniverse.repository.RatingRepository;
 import com.iuniverse.service.SemesterService;
 import com.iuniverse.service.TeacherService;  // Import Service
 import lombok.RequiredArgsConstructor;
@@ -14,7 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.iuniverse.controller.request.RatingRequest;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -23,13 +28,14 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class CourseService {
-
+     
     private final CourseRepository courseRepository;
 
     private final SemesterService semesterService;
 
     private final TeacherService teacherService;
-
+private final RatingRepository ratingRepository;
+private final EnrollmentRepository enrollmentRepository;
     @Transactional
     public Long createCourse(CourseRequest req, Long currentUserId) {
 
@@ -159,4 +165,27 @@ public class CourseService {
         }
         return course;
     }
+    @Transactional
+public void addRating(Long studentId, Long courseId, RatingRequest req) {
+
+    Course course = courseRepository.findById(courseId)
+            .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+
+    boolean enrolled = enrollmentRepository
+            .existsByStudentUserIdAndCourseId(studentId, courseId);
+
+    if (!enrolled) {
+        throw new AccessDeniedException("You must enroll first");
+    }
+
+    Rating rating = new Rating();
+    rating.setCourseId(courseId);
+    rating.setStudentId(studentId);
+    rating.setStarCount(req.getStarCount());
+    rating.setComment(req.getComment());
+    rating.setCreatedAt(LocalDateTime.now());
+
+    ratingRepository.save(rating);
+}
+
 }

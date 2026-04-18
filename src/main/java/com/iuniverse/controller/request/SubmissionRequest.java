@@ -9,6 +9,8 @@ import java.util.List;
 @Data
 public class SubmissionRequest {
 
+    private Long problemSetId;
+
     @NotEmpty(message = "Answers list cannot be empty")
     @Valid
     private List<AnswerRequest> answers;
