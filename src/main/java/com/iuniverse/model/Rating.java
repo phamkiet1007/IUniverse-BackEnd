@@ -2,6 +2,8 @@ package com.iuniverse.model;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+
+
 @Entity
 @Table(name = "tbl_rating")
 @Data
@@ -19,4 +21,5 @@ public class Rating {
     private String comment;
 
     private LocalDateTime createdAt = LocalDateTime.now();
+    
 }

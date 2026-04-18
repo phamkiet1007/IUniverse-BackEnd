@@ -165,6 +165,7 @@ private final EnrollmentRepository enrollmentRepository;
         }
         return course;
     }
+// Add a rating to a course
     @Transactional
 public void addRating(Long studentId, Long courseId, RatingRequest req) {
 
@@ -186,6 +187,15 @@ public void addRating(Long studentId, Long courseId, RatingRequest req) {
     rating.setCreatedAt(LocalDateTime.now());
 
     ratingRepository.save(rating);
+}
+// Get all ratings for a course
+@Transactional(readOnly = true)
+public List<Rating> getRatingsByCourse(Long courseId) {
+
+    Course course = courseRepository.findById(courseId)
+            .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+
+    return ratingRepository.findByCourseId(courseId);
 }
 
 }

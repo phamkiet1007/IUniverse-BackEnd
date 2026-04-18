@@ -3,6 +3,7 @@ package com.iuniverse.controller;
 import com.iuniverse.controller.request.SubmissionRequest;
 import com.iuniverse.controller.response.CourseResponse;
 import com.iuniverse.model.Course;
+import com.iuniverse.model.Rating;
 import com.iuniverse.service.EnrollmentService;
 import com.iuniverse.service.SubmissionService;
 import com.iuniverse.service.UserService;
@@ -151,5 +152,12 @@ public ResponseEntity<?> rateCourse(
     courseService.addRating(studentId, id, request);
 
     return ResponseEntity.ok("Rated successfully");
+}
+@GetMapping("/courses/{id}/ratings")
+public ResponseEntity<?> getRatings(@PathVariable Long id) {
+
+    List<Rating> ratings = courseService.getRatingsByCourse(id);
+
+    return ResponseEntity.ok(ratings);
 }
 }

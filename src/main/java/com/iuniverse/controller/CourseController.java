@@ -430,4 +430,12 @@ public class CourseController {
 
         return ResponseEntity.ok(response);
     }
+
+
+
+    @GetMapping("/{id}/ratings")
+    public ResponseEntity<?> getRatings(@PathVariable Long id) {
+        return ResponseEntity.ok(courseService.getRatingsByCourse(id));
+
+}   
 }
