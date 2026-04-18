@@ -32,4 +32,7 @@ public class StudentAnswer {
 
     @Column(name = "earned_points")
     private Double earnedPoints;
+
+    @Column(name = "teacher_comment", columnDefinition = "TEXT")
+    private String teacherComment;
 }
