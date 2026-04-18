@@ -1,5 +1,6 @@
 package com.iuniverse.controller.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.iuniverse.common.Gender;
 import com.iuniverse.common.Role;
 import jakarta.validation.constraints.Email;
@@ -22,6 +23,7 @@ public class UserUpdateRequest {
     @NotBlank(message = "Last name is required")
     private String lastName;
     private Gender gender;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date birthday;
     private String username;
     private String phoneNumber;
