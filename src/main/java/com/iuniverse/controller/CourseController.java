@@ -1,10 +1,7 @@
 package com.iuniverse.controller;
 
 import com.iuniverse.controller.request.*;
-import com.iuniverse.controller.response.CourseResponse;
-import com.iuniverse.controller.response.MaterialResponse;
-import com.iuniverse.controller.response.ModuleResponse;
-import com.iuniverse.controller.response.UserResponse;
+import com.iuniverse.controller.response.*;
 import com.iuniverse.model.Material;
 import com.iuniverse.service.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -480,5 +477,22 @@ public class CourseController {
         result.put("data", materials);
 
         return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Get all problem sets in module", description = "Teacher views all quizzes inside a specific module")
+    @PreAuthorize("hasAuthority('TEACHER')")
+    @GetMapping("/module/{moduleId}/problem-sets")
+    public ResponseEntity<Object> getProblemSetsByModule(@PathVariable("moduleId") Long moduleId) {
+
+        Long teacherId = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).getId();
+
+        List<ProblemSetResponse> problemSets = problemSetService.getProblemSetsByModule(moduleId, teacherId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Get problem sets successfully!");
+        result.put("data", problemSets);
+
+        return ResponseEntity.ok(result);
     }
 }

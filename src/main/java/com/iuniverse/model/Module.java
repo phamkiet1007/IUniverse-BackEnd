@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -36,4 +37,7 @@ public class Module {
             inverseJoinColumns = @JoinColumn(name = "material_id")
     )
     private Set<Material> materials = new HashSet<>();
+
+    @OneToMany(mappedBy = "module", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ProblemSet> problemSets;
 }
