@@ -1,11 +1,9 @@
 package com.iuniverse.service.impl;
 
+import com.iuniverse.common.Gender;
 import com.iuniverse.common.Role;
 import com.iuniverse.common.UserStatus;
-import com.iuniverse.controller.request.AddressRequest;
-import com.iuniverse.controller.request.UserCreationRequest;
-import com.iuniverse.controller.request.ResetPasswordRequest;
-import com.iuniverse.controller.request.UserUpdateRequest;
+import com.iuniverse.controller.request.*;
 import com.iuniverse.controller.response.UserPageResponse;
 import com.iuniverse.controller.response.UserResponse;
 import com.iuniverse.exception.InvalidDataException;
@@ -25,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -140,81 +139,56 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
-    @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long save(UserCreationRequest req) {
-        log.info("Saving user: {}", req);
+    public void registerStudent(StudentRegisterRequest req) {
+        log.info("Processing student registration for email: {}", req.getEmail());
 
-        User userByEmail = userRepository.findByEmail(req.getEmail());
-        if(userByEmail != null) {
-            log.warn("Email is already exist: {}", req.getEmail());
-            throw new InvalidDataException("Email is already exist!");
+        if (userRepository.findByEmail(req.getEmail()) != null) {
+            throw new InvalidDataException("Email already exists!");
+        }
+        if (userRepository.existsByUsername(req.getUsername())) {
+            throw new InvalidDataException("Username already exists!");
         }
 
+        // 2. Tạo User mặc định
         User user = new User();
         user.setFirstName(req.getFirstName());
         user.setLastName(req.getLastName());
-        user.setGender(req.getGender());
+        user.setGender(Gender.valueOf(req.getGender()));
         user.setBirthday(req.getBirthday());
         user.setEmail(req.getEmail());
         user.setPhoneNumber(req.getPhoneNumber());
         user.setUsername(req.getUsername());
-
         user.setPassword(passwordEncoder.encode(req.getPassword()));
 
-        user.setRole(req.getRole());
+        // ÉP CỨNG ROLE LÀ STUDENT
+        user.setRole(Role.STUDENT);
         user.setStatus(UserStatus.NONE);
 
-        //generate otp within 5 mins live
-        String otp = String.format("%06d", new Random().nextInt(999999));
+        // 3. Tạo Profile Sinh viên
+        if (req.getStudentCode() == null || req.getStudentCode().trim().isEmpty()) {
+            throw new InvalidDataException("Student code cannot be empty!");
+        }
+        Student studentProfile = new Student();
+        studentProfile.setUser(user);
+        studentProfile.setStudentCode(req.getStudentCode());
+        user.setStudentProfile(studentProfile);
+
+        // 4. Sinh OTP 5 phút
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
         user.setOtpCode(otp);
         user.setOtpExpiryTime(new Date(System.currentTimeMillis() + (5 * 60 * 1000)));
 
-        if (req.getRole() == Role.STUDENT) {
-            if (StringUtils.isBlank(req.getStudentCode())) {
-                throw new InvalidDataException("Student code is required for role STUDENT!");
-            }
-            Student studentProfile = new Student();
-            studentProfile.setUser(user);
-            studentProfile.setStudentCode(req.getStudentCode());
-            user.setStudentProfile(studentProfile); // Gắn con vào mẹ -> Hibernate sẽ tự lưu
-
-        } else if (req.getRole() == Role.TEACHER) {
-            Teacher teacherProfile = new Teacher();
-            teacherProfile.setUser(user);
-            teacherProfile.setDepartment(req.getDepartment());
-            user.setTeacherProfile(teacherProfile);
-        }
-
-        if(req.getAddress() != null) {
-            log.info("Preparing address for user...");
-            Address address = new Address();
-            AddressRequest addressReq = req.getAddress();
-
-            address.setStreet(addressReq.getStreet());
-            address.setCity(addressReq.getCity());
-            address.setCountry(addressReq.getCountry());
-            address.setBuilding(addressReq.getBuilding());
-            address.setAddressType(addressReq.getAddressType());
-
-            // Quan trọng: Gắn User vào Address và Gắn Address vào User
-            address.setUser(user);
-            user.setAddress(address);
-        }
-
         userRepository.save(user);
-        log.info("User, Profile and Address saved successfully: {}", user);
 
         try {
             emailService.sendOtpEmail(user.getEmail(), otp);
-            log.info("OTP Email sent to: {}", user.getEmail());
+            log.info("Sent OTP to email: {}", user.getEmail());
         } catch (Exception e) {
-            log.error("Failed to send OTP email", e);
-            // Có thể throw Exception hoặc kệ nó tùy logic của bạn
+            log.error("Error sending email OTP", e);
         }
-
-        return user.getId();
     }
+
 
     //validate otp
     @Transactional(rollbackFor = Exception.class)
@@ -247,33 +221,45 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void update(UserUpdateRequest req) {
-        log.info("Updating user: {}", req);
+    public void update(UserUpdateRequest req, String currentUsername) {
+        log.info("User '{}' is requesting to update profile ID: {}", currentUsername, req.getId());
 
-        User user = getUserEntity(req.getId());
-        user.setFirstName(req.getFirstName());
-        user.setLastName(req.getLastName());
-        user.setGender(req.getGender());
-        user.setBirthday(req.getBirthday());
-        user.setEmail(req.getEmail());
-        user.setPhoneNumber(req.getPhoneNumber());
-        user.setUsername(req.getUsername());
+        // 1. Tìm User đang đăng nhập dựa vào token
+        User currentUser = userRepository.findByUsername(currentUsername);
+        if (currentUser == null) {
+            throw new ResourceNotFoundException("Current user not found!");
+        }
 
+        // 2. BẢO MẬT: Kiểm tra xem ID muốn sửa có phải là ID của chính họ không
+        if (!currentUser.getId().equals(req.getId())) {
+            log.warn("IDOR attempt! User {} tried to update profile of user ID {}", currentUsername, req.getId());
+            throw new AccessDeniedException("Access denied! You can only update your own profile.");
+        }
 
+        // 3. Tiến hành update như bình thường (Dùng luôn currentUser cho tối ưu)
+        currentUser.setFirstName(req.getFirstName());
+        currentUser.setLastName(req.getLastName());
+        currentUser.setGender(req.getGender());
+        currentUser.setBirthday(req.getBirthday());
+        currentUser.setEmail(req.getEmail());
+        currentUser.setPhoneNumber(req.getPhoneNumber());
+        // Lưu ý: Không cho phép đổi Username ở đây để tránh lỗi hệ thống
 
-        userRepository.save(user);
-        log.info("User updated successfully: {}", user);
+        userRepository.save(currentUser);
+        log.info("User updated successfully: {}", currentUser.getUsername());
 
-        Address address = addressRepository.findByUserIdAndAddressType(req.getId(), req.getAddress().getAddressType());
-
-        if (address != null) {
-            log.info("Updating address for user: {}", user.getId());
-            address.setStreet(req.getAddress().getStreet());
-            address.setCity(req.getAddress().getCity());
-            address.setCountry(req.getAddress().getCountry());
-            address.setBuilding(req.getAddress().getBuilding());
-            addressRepository.save(address);
-            log.info("Address updated successfully: {}", address);
+        // 4. Xử lý Address
+        if (req.getAddress() != null) {
+            Address address = addressRepository.findByUserIdAndAddressType(currentUser.getId(), req.getAddress().getAddressType());
+            if (address != null) {
+                log.info("Updating address for user: {}", currentUser.getId());
+                address.setStreet(req.getAddress().getStreet());
+                address.setCity(req.getAddress().getCity());
+                address.setCountry(req.getAddress().getCountry());
+                address.setBuilding(req.getAddress().getBuilding());
+                addressRepository.save(address);
+                log.info("Address updated successfully");
+            }
         }
     }
 
@@ -362,7 +348,7 @@ public class UserServiceImpl implements UserService {
         user.setOtpExpiryTime(new Date(System.currentTimeMillis() + (5 * 60 * 1000)));
 
         userRepository.save(user);
-        log.info("Đã tạo OTP mới cho user: {}", user.getEmail());
+        log.info("Created new OTP for user: {}", user.getEmail());
 
         try {
             emailService.sendOtpEmail(user.getEmail(), newOtp);

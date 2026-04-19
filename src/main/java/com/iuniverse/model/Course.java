@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "tbl_course")
@@ -37,4 +38,7 @@ public class Course {
 
     @Column(name = "created_at", insertable = false, updatable = false)
     private Date createdAt;
+
+    @OneToMany(mappedBy = "course", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Module> modules;
 }

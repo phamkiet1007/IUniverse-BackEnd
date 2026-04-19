@@ -2,6 +2,8 @@ package com.iuniverse.service;
 
 import com.iuniverse.controller.request.CourseRequest;
 import com.iuniverse.controller.response.CourseResponse;
+import com.iuniverse.controller.response.MaterialResponse;
+import com.iuniverse.controller.response.ModuleResponse;
 import com.iuniverse.exception.ResourceNotFoundException;
 import com.iuniverse.model.Course;
 import com.iuniverse.model.Rating;
@@ -109,7 +111,26 @@ private final EnrollmentRepository enrollmentRepository;
             throw new AccessDeniedException("You do not have permission to view this course's details.");
         }
 
-        //Map to DTO
+        // Map Material
+        List<ModuleResponse> moduleResponses = course.getModules().stream().map(module -> {
+            List<MaterialResponse> materialResponses = module.getMaterials().stream().map(material ->
+                    MaterialResponse.builder()
+                            .id(material.getId())
+                            .title(material.getTitle())
+                            .fileUrl(material.getContentUrl())
+                            .type(material.getType())
+                            .build()
+            ).collect(Collectors.toList());
+
+            // Map Module
+            return ModuleResponse.builder()
+                    .id(module.getId())
+                    .title(module.getTitle())
+                    .orderIndex(module.getOrderIndex())
+                    .materials(materialResponses)
+                    .build();
+        }).collect(Collectors.toList());
+
         String fullName = course.getInstructor().getUser().getFirstName() + " " +
                 course.getInstructor().getUser().getLastName();
 
@@ -120,6 +141,7 @@ private final EnrollmentRepository enrollmentRepository;
                 .joinCode(course.getJoinCode())
                 .semesterName(course.getSemester().getName())
                 .instructorName(fullName)
+                .modules(moduleResponses) // Nhét Module vào Course
                 .build();
     }
 

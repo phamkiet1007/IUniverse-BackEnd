@@ -1,5 +1,6 @@
 package com.iuniverse.controller.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.iuniverse.common.Gender;
 import com.iuniverse.common.Role;
 import jakarta.validation.constraints.Email;
@@ -25,6 +26,7 @@ public class UserCreationRequest implements Serializable {
 
     private Gender gender;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private Date birthday;
 
     @NotBlank(message = "Username is required")
