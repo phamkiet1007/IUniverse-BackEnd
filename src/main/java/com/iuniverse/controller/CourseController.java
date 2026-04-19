@@ -2,6 +2,8 @@ package com.iuniverse.controller;
 
 import com.iuniverse.controller.request.*;
 import com.iuniverse.controller.response.CourseResponse;
+import com.iuniverse.controller.response.MaterialResponse;
+import com.iuniverse.controller.response.ModuleResponse;
 import com.iuniverse.controller.response.UserResponse;
 import com.iuniverse.model.Material;
 import com.iuniverse.service.*;
@@ -429,5 +431,45 @@ public class CourseController {
         response.put("data", savedMaterial);
 
         return ResponseEntity.ok(response);
+    }
+
+    // =========================================================================================
+    // LẤY DANH SÁCH MODULES & MATERIALS
+    // =========================================================================================
+
+    @Operation(summary = "Get all modules in course", description = "Teacher views all modules of a specific course")
+    @PreAuthorize("hasAuthority('TEACHER')")
+    @GetMapping("/{courseId}/modules")
+    public ResponseEntity<Object> getModulesByCourse(@PathVariable("courseId") Long courseId) {
+
+        Long teacherId = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).getId();
+
+        // Gọi service (bạn cần tự định nghĩa hàm này trong ModuleService nhé)
+        List<ModuleResponse> modules = moduleService.getModulesByCourse(courseId, teacherId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Get modules successfully!");
+        result.put("data", modules);
+
+        return new ResponseEntity<>(result, HttpStatus.OK);
+    }
+
+    @Operation(summary = "Get all materials in module", description = "Teacher views all materials inside a specific module")
+    @PreAuthorize("hasAuthority('TEACHER')")
+    @GetMapping("/module/{moduleId}/materials")
+    public ResponseEntity<Object> getMaterialsByModule(@PathVariable("moduleId") Long moduleId) {
+
+        Long teacherId = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).getId();
+
+        // Gọi service (bạn cần tự định nghĩa hàm này trong ModuleService nhé)
+        List<MaterialResponse> materials = moduleService.getMaterialsByModule(moduleId, teacherId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Get materials successfully!");
+        result.put("data", materials);
+
+        return new ResponseEntity<>(result, HttpStatus.OK);
     }
 }

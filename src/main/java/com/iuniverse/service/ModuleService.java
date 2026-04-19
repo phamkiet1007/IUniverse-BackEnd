@@ -2,6 +2,8 @@ package com.iuniverse.service;
 
 import com.iuniverse.controller.request.MaterialRequest;
 import com.iuniverse.controller.request.ModuleRequest;
+import com.iuniverse.controller.response.MaterialResponse;
+import com.iuniverse.controller.response.ModuleResponse;
 import com.iuniverse.exception.ResourceNotFoundException;
 import com.iuniverse.model.Course;
 import com.iuniverse.model.Material;
@@ -15,6 +17,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j(topic = "MODULE-SERVICE")
@@ -23,6 +28,7 @@ public class ModuleService {
     private final ModuleRepository moduleRepository;
     private final CourseRepository courseRepository;
     private final MaterialRepository materialRepository;
+    private final CourseService courseService;
 
 
     @Transactional
@@ -130,5 +136,39 @@ public class ModuleService {
 
         //Nếu Material không còn nằm trong Module nào khác, có thể xóa hẳn nó khỏi DB
         // materialRepository.delete(material);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ModuleResponse> getModulesByCourse(Long courseId, Long teacherId) {
+        // Đảm bảo teacher là chủ khóa học (Dùng lại hàm bảo mật bên CourseService)
+        Course course = courseService.getValidCourseForTeacher(courseId, teacherId);
+
+        return course.getModules().stream().map(module ->
+                ModuleResponse.builder()
+                        .id(module.getId())
+                        .title(module.getTitle())
+                        .orderIndex(module.getOrderIndex())
+                        .build()
+        ).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<MaterialResponse> getMaterialsByModule(Long moduleId, Long teacherId) {
+        Module module = moduleRepository.findById(moduleId)
+                .orElseThrow(() -> new ResourceNotFoundException("Module not found"));
+
+        // Kiểm tra bảo mật: Module này có thuộc Course của Teacher đang đăng nhập không
+        if (!module.getCourse().getInstructor().getUser().getId().equals(teacherId)) {
+            throw new AccessDeniedException("Access denied!");
+        }
+
+        return module.getMaterials().stream().map(material ->
+                MaterialResponse.builder()
+                        .id(material.getId())
+                        .title(material.getTitle())
+                        .fileUrl(material.getContentUrl())
+                        .type(material.getType())
+                        .build()
+        ).collect(Collectors.toList());
     }
 }
