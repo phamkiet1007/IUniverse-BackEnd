@@ -36,12 +36,26 @@ public class Submission {
     @Column(name = "total_score")
     private Double totalScore;
 
+    // Các trường lưu câu trả lời của sinh viên
+    @Column(name = "essay_answer", columnDefinition = "TEXT")
+private String essayAnswer;
+
+@Column(name = "file_url")
+private String fileUrl;
+
+@Enumerated(EnumType.STRING)
+@Column(name = "status")
+private SubmissionStatus status; // PENDING, GRADED
+
     // Quan hệ 1-N với StudentAnswer (1 bài nộp có nhiều câu trả lời)
     // CascadeType.ALL giúp khi lưu Submission thì nó tự lưu luôn list các câu trả lời
     @Builder.Default
     @OneToMany(mappedBy = "submission", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<StudentAnswer> studentAnswers = new ArrayList<>();
-
+public enum SubmissionStatus {
+    PENDING,
+    GRADED
+}
     public void addStudentAnswer(StudentAnswer answer) {
         studentAnswers.add(answer);
         answer.setSubmission(this);
