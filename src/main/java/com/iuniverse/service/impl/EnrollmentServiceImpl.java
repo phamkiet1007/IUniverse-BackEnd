@@ -81,9 +81,23 @@ public class EnrollmentServiceImpl implements EnrollmentService {
                 .collect(Collectors.toList());
     }
 
-    // ✅ nếu interface có method này thì giữ (không thì có thể xoá)
-    @Override
+    @Transactional(readOnly = true)
     public List<String> getStudentsInCourse(Long courseId, Long teacherId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found"));
+
+        if (!course.getInstructor().getUser().getId().equals(teacherId)) {
+            throw new AccessDeniedException("Access denied! You do not have permission to view this course.");
+        }
+
+        List<Enrollment> enrollments = enrollmentRepository.findByCourseId(courseId);
+
+        return enrollments.stream().map(enrollment -> {
+            Student student = enrollment.getStudent();
+            String fullName = student.getUser().getFirstName() + " " + student.getUser().getLastName();
+
+            return student.getStudentCode() + " - " + fullName;
+        }).collect(Collectors.toList());
     }
 }
