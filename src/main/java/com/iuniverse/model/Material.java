@@ -23,10 +23,12 @@ public class Material {
     private String title;
 
     @Column(name = "type", nullable = false, length = 50)
-    private String type; //"VIDEO", "PDF", "LINK"
+    private String type;
 
     @Column(name = "content_url", nullable = false, columnDefinition = "TEXT")
     private String contentUrl;
+
+
 
     @CreationTimestamp
     @Temporal(TemporalType.TIMESTAMP)

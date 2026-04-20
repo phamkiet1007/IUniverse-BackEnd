@@ -4,6 +4,7 @@ import com.iuniverse.controller.request.MaterialRequest;
 import com.iuniverse.controller.request.ModuleRequest;
 import com.iuniverse.controller.response.MaterialResponse;
 import com.iuniverse.controller.response.ModuleResponse;
+import com.iuniverse.controller.response.ProblemSetResponse;
 import com.iuniverse.exception.ResourceNotFoundException;
 import com.iuniverse.model.Course;
 import com.iuniverse.model.Material;
@@ -11,14 +12,18 @@ import com.iuniverse.model.Module;
 import com.iuniverse.repository.CourseRepository;
 import com.iuniverse.repository.MaterialRepository;
 import com.iuniverse.repository.ModuleRepository;
+import com.iuniverse.repository.ProblemSetRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -171,4 +176,38 @@ public class ModuleService {
                         .build()
         ).collect(Collectors.toList());
     }
+
+@Transactional(readOnly = true)
+public List<Module> getModulesByCourseId(Long courseId) {
+    return moduleRepository.findByCourseId(courseId);
+}
+
+@Transactional(readOnly = true)
+public Map<String, Object> getModuleContents(Long moduleId) {
+
+    Module module = moduleRepository.findById(moduleId)
+            .orElseThrow(() -> new ResourceNotFoundException("Module not found"));
+
+    List<MaterialResponse> materials = module.getMaterials().stream()
+            .map(material -> MaterialResponse.builder()
+                    .id(material.getId())
+                    .title(material.getTitle())
+                    .fileUrl(material.getContentUrl())
+                    .type(material.getType())
+                    .build())
+            .toList();
+
+    List<ProblemSetResponse> problemSets = module.getProblemSets().stream()
+            .map(ps -> ProblemSetResponse.builder()
+                    .id(ps.getId())
+                    .title(ps.getTitle())
+                    .build())
+            .toList();
+
+    Map<String, Object> res = new LinkedHashMap<>();
+    res.put("materials", materials);
+    res.put("problemSets", problemSets);
+
+    return res;
+}
 }

@@ -11,6 +11,7 @@ import com.iuniverse.model.Semester;
 import com.iuniverse.model.Teacher;
 import com.iuniverse.repository.CourseRepository;
 import com.iuniverse.repository.EnrollmentRepository;
+import com.iuniverse.repository.ModuleRepository;
 import com.iuniverse.repository.RatingRepository;
 import com.iuniverse.service.SemesterService;
 import com.iuniverse.service.TeacherService;  // Import Service
@@ -20,6 +21,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import com.iuniverse.controller.request.RatingRequest;
+import com.iuniverse.model.Module;
+
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -38,6 +41,7 @@ public class CourseService {
     private final TeacherService teacherService;
 private final RatingRepository ratingRepository;
 private final EnrollmentRepository enrollmentRepository;
+private final ModuleRepository moduleRepository;
     @Transactional
     public Long createCourse(CourseRequest req, Long currentUserId) {
 
@@ -219,5 +223,8 @@ public List<Rating> getRatingsByCourse(Long courseId) {
 
     return ratingRepository.findByCourseId(courseId);
 }
-
+@Transactional(readOnly = true)
+public List<Module> getModulesByCourseId(Long courseId) {
+    return moduleRepository.findByCourseId(courseId);
+}
 }

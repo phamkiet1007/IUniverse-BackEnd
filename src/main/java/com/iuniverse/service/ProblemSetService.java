@@ -21,7 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+
+
 
 @Service
 @RequiredArgsConstructor
@@ -228,4 +231,31 @@ public class ProblemSetService {
                 .questions(questionResponses)
                 .build();
     }
+
+
+@Transactional(readOnly = true)
+public List<QuestionResponse> getQuestionsForStudent(Long problemSetId) {
+
+    // 1. check problem set tồn tại
+    ProblemSet ps = problemSetRepository.findById(problemSetId)
+            .orElseThrow(() -> new ResourceNotFoundException("Problem set not found"));
+
+    // 2. lấy questions
+    List<Question> questions = questionRepository.findByProblemSetId(problemSetId);
+
+    // 3. map sang response (KHÔNG lộ correctAns)
+    List<QuestionResponse> dtoList = questions.stream()
+            .map(q -> QuestionResponse.builder()
+                    .id(q.getId())
+                    .content(q.getContent())
+                    .type(q.getType())
+                    .points(q.getPoints())
+                    .options(q.getOptions())
+                    .build()
+            )
+            .collect(Collectors.toList());
+
+    // 4. RETURN (m đang thiếu dòng này)
+    return dtoList;
+}
 }

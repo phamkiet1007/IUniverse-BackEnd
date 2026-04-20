@@ -20,8 +20,8 @@ public class ProblemSet {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "module_id", referencedColumnName = "id", nullable = false)
-    private Module module;
+@JoinColumn(name = "module_id", nullable = false)
+private Module module;
 
     @Column(name = "title", nullable = false)
     private String title;

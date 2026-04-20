@@ -164,20 +164,47 @@ public ResponseEntity<Object> submitProblemSet(
 
         return ResponseEntity.ok(ratings);
     }
+private final ModuleService moduleService;
+@Operation(summary = "Get modules by course", description = "Student views modules of a course")
+@PreAuthorize("hasAuthority('STUDENT')")
+@GetMapping("/courses/{courseId}/modules")
+public ResponseEntity<Object> getModulesByCourse(@PathVariable Long courseId) {
 
-    @Operation(summary = "Get all problem sets in module", description = "Student views all quizzes inside a specific module")
-    @PreAuthorize("hasAuthority('STUDENT')")
-    @GetMapping("/module/{moduleId}/problem-sets")
-    public ResponseEntity<Object> getProblemSetsByModule(@PathVariable("moduleId") Long moduleId) {
+    List<?> modules = moduleService.getModulesByCourseId(courseId);
 
-        Long studentId = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).getId();
-        List<ProblemSetResponse> problemSets = problemSetService.getProblemSetsByModuleForStudent(moduleId, studentId);
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("status", HttpStatus.OK.value());
+    result.put("message", "Get modules successfully!");
+    result.put("data", modules);
 
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("status", HttpStatus.OK.value());
-        result.put("message", "Get problem sets successfully!");
-        result.put("data", problemSets);
+    return ResponseEntity.ok(result);
+}
+@Operation(summary = "Get module contents", description = "Materials + ProblemSets")
+@PreAuthorize("hasAuthority('STUDENT')")
+@GetMapping("/modules/{moduleId}/contents")
+public ResponseEntity<Object> getModuleContents(@PathVariable Long moduleId) {
 
-        return ResponseEntity.ok(result);
-    }
+    Map<String, Object> contents = moduleService.getModuleContents(moduleId);
+
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("status", HttpStatus.OK.value());
+    result.put("message", "Get module contents successfully!");
+    result.put("data", contents);
+
+    return ResponseEntity.ok(result);
+}
+@Operation(summary = "Get questions", description = "Student views questions of a problem set")
+@PreAuthorize("hasAuthority('STUDENT')")
+@GetMapping("/problem-sets/{psId}/questions")
+public ResponseEntity<Object> getQuestions(@PathVariable Long psId) {
+
+    List<?> questions = problemSetService.getQuestionsForStudent(psId);
+
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("status", HttpStatus.OK.value());
+    result.put("message", "Get questions successfully!");
+    result.put("data", questions);
+
+    return ResponseEntity.ok(result);
+}
 }

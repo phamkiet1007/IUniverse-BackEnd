@@ -27,12 +27,13 @@ public class Module {
     @Column(name = "title", nullable = false)
     private String title;
 
-    //sắp xếp thứ tự hiển thị (Ví dụ: Tuần 1 (index 1), Tuần 2 (index 2))
     @Column(name = "order_index")
     private Integer orderIndex;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinTable(name = "tbl_module_material",
+    // ✅ MANY TO MANY (giữ DB hiện tại)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "tbl_module_material",
             joinColumns = @JoinColumn(name = "module_id"),
             inverseJoinColumns = @JoinColumn(name = "material_id")
     )
