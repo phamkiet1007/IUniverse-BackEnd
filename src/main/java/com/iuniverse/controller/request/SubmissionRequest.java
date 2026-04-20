@@ -14,4 +14,5 @@ public class SubmissionRequest {
     @NotEmpty(message = "Answers list cannot be empty")
     @Valid
     private List<AnswerRequest> answers;
+    private String essayAnswer; 
 }

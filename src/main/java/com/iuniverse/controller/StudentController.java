@@ -94,28 +94,34 @@ private final CourseService courseService;
         return new ResponseEntity<>(result, HttpStatus.OK);
     }
 
-    @Operation(summary = "Submit Problem Set", description = "Student submits their answers for auto-grading")
-    @PreAuthorize("hasAuthority('STUDENT')")
-    @PostMapping("/problem-set/{psId}/submit")
-    public ResponseEntity<Object> submitProblemSet(
-            @PathVariable("psId") Long problemSetId,
-            @RequestBody @Valid SubmissionRequest request,
-            Authentication authentication
-    ) {
-        String username = authentication.getName();
-        Long studentId = userService.findByUsername(username).getId();
+    @Operation(summary = "Submit Problem Set", description = "Student submits their answers (quiz / essay / mixed)")
+@PreAuthorize("hasAuthority('STUDENT')")
+@PostMapping("/problem-set/{psId}/submit")
+public ResponseEntity<Object> submitProblemSet(
+        @PathVariable("psId") Long problemSetId,
+        @RequestBody @Valid SubmissionRequest request,
+        Authentication authentication
+) {
+    // 1. Lấy user hiện tại
+    String username = authentication.getName();
+    Long studentId = userService.findByUsername(username).getId();
 
-        log.info("Student {} is submitting problem set {}", username, problemSetId);
+    log.info("Student {} is submitting problem set {}", username, problemSetId);
 
-        Long submissionId = submissionService.submitAndGrade(problemSetId, request, studentId);
+    // 2. Sync lại cho chắc (tránh lệch ID)
+    request.setProblemSetId(problemSetId);
 
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("status", HttpStatus.CREATED.value());
-        result.put("message", "Submit successfully!");
-        result.put("submissionId", submissionId);
+    // 3. Gọi service
+    Long submissionId = submissionService.submitAndGrade(problemSetId, request, studentId);
 
-        return new ResponseEntity<>(result, HttpStatus.CREATED);
-    }
+    // 4. Response
+    Map<String, Object> result = new LinkedHashMap<>();
+    result.put("status", HttpStatus.CREATED.value());
+    result.put("message", "Submission created successfully");
+    result.put("submissionId", submissionId);
+
+    return new ResponseEntity<>(result, HttpStatus.CREATED);
+}
 
     @Operation(summary = "View Submission Result", description = "Student views their graded submission")
     @PreAuthorize("hasAuthority('STUDENT')")

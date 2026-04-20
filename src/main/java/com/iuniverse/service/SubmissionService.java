@@ -15,6 +15,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 import java.util.List;
 
 @Service
@@ -32,7 +33,7 @@ public class SubmissionService {
     @Transactional
     public Long submitAndGrade(Long problemSetId, SubmissionRequest request, Long currentStudentId) {
         log.info("Student {} is submitting Problem Set {}", currentStudentId, problemSetId);
-
+        boolean hasEssay = false;
         // 1. Tìm Problem Set
         ProblemSet problemSet = problemSetRepository.findById(problemSetId)
                 .orElseThrow(() -> new ResourceNotFoundException("Problem Set does not exist! ID: " + problemSetId + ""));
@@ -59,56 +60,67 @@ public class SubmissionService {
                 .problemSet(problemSet)
                 .totalScore(0.0) // Sẽ cộng dồn ở dưới
                 .build();
+        submission.setStatus(Submission.SubmissionStatus.PENDING);
 
-        double totalEarnedPoints = 0.0;
+       double totalEarnedPoints = 0.0;
 
-        // 5. AUTO-GRADING ENGINE (Chấm điểm tự động và Phân loại)
-        for (AnswerRequest answerReq : request.getAnswers()) {
 
-            // Lấy câu hỏi từ DB
-            Question question = questionRepository.findById(answerReq.getQuestionId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Question ID " + answerReq.getQuestionId() + " does not exist!"));
+for (AnswerRequest answerReq : request.getAnswers()) {
 
-            // Xác minh câu hỏi này có thực sự thuộc về bài tập đang làm không
-            if (!question.getProblemSet().getId().equals(problemSetId)) {
-                throw new InvalidDataException("Question does not belong to the current Problem Set!");
-            }
+    Question question = questionRepository.findById(answerReq.getQuestionId())
+            .orElseThrow(() -> new ResourceNotFoundException(
+                    "Question ID " + answerReq.getQuestionId() + " does not exist!"
+            ));
 
-            boolean isCorrect = false;
-            double earnedPoints = 0.0;
+    if (!question.getProblemSet().getId().equals(problemSetId)) {
+        throw new InvalidDataException("Question does not belong to this Problem Set!");
+    }
 
-            // RẼ NHÁNH THEO LOẠI CÂU HỎI
-            if (question.getType() == QuestionType.MULTIPLE_CHOICE) {
-                // Máy tự động chấm điểm cho Trắc nghiệm
-                if (question.getCorrectAns() != null &&
-                        question.getCorrectAns().equalsIgnoreCase(answerReq.getStudentResponse().trim())) {
-                    isCorrect = true;
-                    earnedPoints = question.getPoints(); // Lấy điểm tối đa
-                }
-            } else if (question.getType() == QuestionType.SHORT_ANSWER || question.getType() == QuestionType.ESSAY) {
-                // Đối với Short Answer và Essay: Tạm gán 0 điểm, để false để chờ giảng viên chấm tay
-                isCorrect = false;
-                earnedPoints = 0.0;
-                log.info("Question ID {} is {} type. Assigned 0 points pending manual grading.", question.getId(), question.getType());
-            }
+    boolean isCorrect = false;
+    double earnedPoints = 0.0;
 
-            // Cộng vào tổng điểm
-            totalEarnedPoints += earnedPoints;
+    if (question.getType() == QuestionType.MULTIPLE_CHOICE) {
 
-            // Tạo chi tiết câu trả lời
-            StudentAnswer studentAnswer = StudentAnswer.builder()
-                    .question(question)
-                    .studentResponse(answerReq.getStudentResponse().trim())
-                    .isCorrect(isCorrect)
-                    .earnedPoints(earnedPoints)
-                    .build();
-
-            // Gắn vào Submission
-            submission.addStudentAnswer(studentAnswer);
+        if (question.getCorrectAns() != null &&
+                question.getCorrectAns().equalsIgnoreCase(answerReq.getStudentResponse().trim())) {
+            isCorrect = true;
+            earnedPoints = question.getPoints();
         }
+
+    } else if (question.getType() == QuestionType.SHORT_ANSWER
+            || question.getType() == QuestionType.ESSAY) {
+
+        hasEssay = true;
+        isCorrect = false;
+        earnedPoints = 0.0;
+
+        log.info("Question ID {} is {} type. Pending manual grading.",
+                question.getId(), question.getType());
+    }
+
+    totalEarnedPoints += earnedPoints;
+
+    StudentAnswer studentAnswer = StudentAnswer.builder()
+            .question(question)
+            .studentResponse(answerReq.getStudentResponse() != null
+                    ? answerReq.getStudentResponse().trim()
+                    : "")
+            .isCorrect(isCorrect)
+            .earnedPoints(earnedPoints)
+            .build();
+
+    submission.addStudentAnswer(studentAnswer);
+}
 
         // 6. Cập nhật tổng điểm và Lưu bài nộp
         submission.setTotalScore(totalEarnedPoints);
+
+if (hasEssay) {
+    submission.setStatus(Submission.SubmissionStatus.PENDING);
+    submission.setEssayAnswer(request.getEssayAnswer()); // nếu có
+} else {
+    submission.setStatus(Submission.SubmissionStatus.GRADED);
+}
         return submissionRepository.save(submission).getId();
     }
 
@@ -170,6 +182,7 @@ public class SubmissionService {
             answer.setTeacherComment(gradeItem.getTeacherComment());
 
             studentAnswerRepository.save(answer);
+            submission.setStatus(Submission.SubmissionStatus.GRADED);
         }
 
         // 3. TÍNH LẠI TỔNG ĐIỂM (Cực kỳ quan trọng)

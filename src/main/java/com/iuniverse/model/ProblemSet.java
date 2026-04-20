@@ -35,6 +35,14 @@ public class ProblemSet {
     @Column(name = "time_limit_mins")
     private Integer timeLimitMins;
 
+@Enumerated(EnumType.STRING)
+@Column(name = "type")
+private ProblemSetType type;
+public enum ProblemSetType {
+    QUIZ,
+    ESSAY,
+    MIXED
+}
     //Cascade: Lưu ProblemSet sẽ tự lưu các Question bên trong
     @OneToMany(mappedBy = "problemSet", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
