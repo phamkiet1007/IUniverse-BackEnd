@@ -2,11 +2,10 @@ package com.iuniverse.controller;
 
 import com.iuniverse.controller.request.SubmissionRequest;
 import com.iuniverse.controller.response.CourseResponse;
+import com.iuniverse.controller.response.ProblemSetResponse;
 import com.iuniverse.model.Course;
 import com.iuniverse.model.Rating;
-import com.iuniverse.service.EnrollmentService;
-import com.iuniverse.service.SubmissionService;
-import com.iuniverse.service.UserService;
+import com.iuniverse.service.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -16,13 +15,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import com.iuniverse.controller.request.RatingRequest;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.*;
-import com.iuniverse.service.CourseService;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,7 +33,9 @@ public class StudentController {
     private final EnrollmentService enrollmentService;
     private final UserService userService;
     private final SubmissionService submissionService;
-private final CourseService courseService;
+    private final CourseService courseService;
+    private final ProblemSetService problemSetService;
+
     @Operation(summary = "Enroll in a course", description = "Student uses Join Code to enter a course")
     @PreAuthorize("hasAuthority('STUDENT')")
     @PostMapping("/course/enroll")
@@ -144,26 +141,43 @@ public ResponseEntity<Object> submitProblemSet(
         return ResponseEntity.ok(result);
     }
 
-@PostMapping("/courses/{id}/ratings")
-@PreAuthorize("hasAuthority('STUDENT')")
-public ResponseEntity<?> rateCourse(
-        @PathVariable Long id,
-        @RequestBody RatingRequest request,
-        Authentication auth) {
+    @PostMapping("/courses/{id}/ratings")
+    @PreAuthorize("hasAuthority('STUDENT')")
+    public ResponseEntity<?> rateCourse(
+            @PathVariable Long id,
+            @RequestBody RatingRequest request,
+            Authentication auth) {
 
-    Long studentId = userService.findByUsername(auth.getName()).getId();
+        Long studentId = userService.findByUsername(auth.getName()).getId();
 
-    request.setCourseId(id);
+        request.setCourseId(id);
 
-    courseService.addRating(studentId, id, request);
+        courseService.addRating(studentId, id, request);
 
-    return ResponseEntity.ok("Rated successfully");
-}
-@GetMapping("/courses/{id}/ratings")
-public ResponseEntity<?> getRatings(@PathVariable Long id) {
+        return ResponseEntity.ok("Rated successfully");
+    }
 
-    List<Rating> ratings = courseService.getRatingsByCourse(id);
+    @GetMapping("/courses/{id}/ratings")
+    public ResponseEntity<?> getRatings(@PathVariable Long id) {
 
-    return ResponseEntity.ok(ratings);
-}
+        List<Rating> ratings = courseService.getRatingsByCourse(id);
+
+        return ResponseEntity.ok(ratings);
+    }
+
+    @Operation(summary = "Get all problem sets in module", description = "Student views all quizzes inside a specific module")
+    @PreAuthorize("hasAuthority('STUDENT')")
+    @GetMapping("/module/{moduleId}/problem-sets")
+    public ResponseEntity<Object> getProblemSetsByModule(@PathVariable("moduleId") Long moduleId) {
+
+        Long studentId = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).getId();
+        List<ProblemSetResponse> problemSets = problemSetService.getProblemSetsByModuleForStudent(moduleId, studentId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Get problem sets successfully!");
+        result.put("data", problemSets);
+
+        return ResponseEntity.ok(result);
+    }
 }
