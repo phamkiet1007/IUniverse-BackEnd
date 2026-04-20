@@ -3,7 +3,9 @@ package com.iuniverse.service;
 import com.iuniverse.common.QuestionType;
 import com.iuniverse.controller.request.ProblemSetRequest;
 import com.iuniverse.controller.request.QuestionRequest;
+import com.iuniverse.controller.response.ProblemSetDetailResponse;
 import com.iuniverse.controller.response.ProblemSetResponse;
+import com.iuniverse.controller.response.QuestionResponse;
 import com.iuniverse.exception.ResourceNotFoundException;
 import com.iuniverse.model.Module;
 import com.iuniverse.model.ProblemSet;
@@ -190,5 +192,40 @@ public class ProblemSetService {
                         .timeLimitMins(ps.getTimeLimitMins())
                         .build()
         ).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ProblemSetDetailResponse getProblemSetDetailForTeacher(Long psId, Long teacherId) {
+
+        // 1. Tìm Problem Set
+        ProblemSet ps = problemSetRepository.findById(psId)
+                .orElseThrow(() -> new ResourceNotFoundException("Problem Set not found with ID: " + psId));
+
+        // 2. Kiểm tra bảo mật: Teacher có phải chủ khóa học không?
+        if (!ps.getModule().getCourse().getInstructor().getUser().getId().equals(teacherId)) {
+            throw new AccessDeniedException("Access denied! You do not own this course.");
+        }
+
+        // 3. Map danh sách câu hỏi
+        List<QuestionResponse> questionResponses = ps.getQuestions().stream().map(q -> {
+            return QuestionResponse.builder()
+                    .id(q.getId())
+                    .content(q.getContent())
+                    .type(q.getType())
+                    .points(q.getPoints())
+                    .correctAns(q.getCorrectAns())
+                     .options(q.getOptions())
+                    .build();
+        }).toList();
+
+        // 4. Map toàn bộ Problem Set
+        return ProblemSetDetailResponse.builder()
+                .id(ps.getId())
+                .title(ps.getTitle())
+                .description(ps.getDescription())
+                .dueDate(ps.getDueDate())
+                .timeLimitMins(ps.getTimeLimitMins())
+                .questions(questionResponses)
+                .build();
     }
 }

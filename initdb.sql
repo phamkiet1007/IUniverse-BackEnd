@@ -189,6 +189,7 @@ CREATE TABLE "tbl_problem_set" (
                                    "description" TEXT,
                                    "due_date" TIMESTAMP NOT NULL,
                                    "time_limit_mins" INTEGER,
+                                   "type" VARCHAR(50),
                                    CONSTRAINT "fk_problemset_module" FOREIGN KEY ("module_id") REFERENCES "tbl_module"("id") ON DELETE CASCADE
 );
 

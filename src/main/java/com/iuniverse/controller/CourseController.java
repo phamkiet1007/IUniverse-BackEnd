@@ -495,4 +495,21 @@ public class CourseController {
 
         return ResponseEntity.ok(result);
     }
+
+    @Operation(summary = "Get problem set details", description = "Teacher views quiz details including all questions")
+    @PreAuthorize("hasAuthority('TEACHER')")
+    @GetMapping("/problem-set/{psId}")
+    public ResponseEntity<Object> getProblemSetDetail(@PathVariable("psId") Long psId) {
+
+        Long teacherId = userService.findByUsername(SecurityContextHolder.getContext().getAuthentication().getName()).getId();
+
+        ProblemSetDetailResponse detail = problemSetService.getProblemSetDetailForTeacher(psId, teacherId);
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("status", HttpStatus.OK.value());
+        result.put("message", "Get problem set details successfully!");
+        result.put("data", detail);
+
+        return ResponseEntity.ok(result);
+    }
 }
