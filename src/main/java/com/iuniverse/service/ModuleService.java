@@ -85,6 +85,8 @@ public class ModuleService {
                 .contentUrl(req.getContentUrl())
                 .build();
 
+        material = materialRepository.save(material);
+
         module.getMaterials().add(material);
 
         moduleRepository.save(module);
