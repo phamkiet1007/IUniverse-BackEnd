@@ -178,8 +178,13 @@ public class ModuleService {
     }
 
 @Transactional(readOnly = true)
-public List<Module> getModulesByCourseId(Long courseId) {
-    return moduleRepository.findByCourseId(courseId);
+public List<ModuleResponse> getModulesByCourseId(Long courseId) {
+    return moduleRepository.findByCourseId(courseId)
+            .stream()
+            .map(m -> ModuleResponse.builder()
+                    .title(m.getTitle())
+                    .build())
+            .toList();
 }
 
 @Transactional(readOnly = true)
