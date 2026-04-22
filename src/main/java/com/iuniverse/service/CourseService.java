@@ -4,6 +4,7 @@ import com.iuniverse.controller.request.CourseRequest;
 import com.iuniverse.controller.response.CourseResponse;
 import com.iuniverse.controller.response.MaterialResponse;
 import com.iuniverse.controller.response.ModuleResponse;
+import com.iuniverse.exception.InvalidDataException;
 import com.iuniverse.exception.ResourceNotFoundException;
 import com.iuniverse.model.Course;
 import com.iuniverse.model.Rating;
@@ -192,7 +193,7 @@ private final ModuleRepository moduleRepository;
         return course;
     }
 // Add a rating to a course
-    @Transactional
+@Transactional
 public void addRating(Long studentId, Long courseId, RatingRequest req) {
 
     Course course = courseRepository.findById(courseId)
@@ -204,6 +205,13 @@ public void addRating(Long studentId, Long courseId, RatingRequest req) {
     if (!enrolled) {
         throw new AccessDeniedException("You must enroll first");
     }
+
+    Rating existing = ratingRepository
+        .findByStudentIdAndCourseId(studentId, courseId);
+
+if (existing != null) {
+    throw new InvalidDataException("You already rated this course");
+}
 
     Rating rating = new Rating();
     rating.setCourseId(courseId);

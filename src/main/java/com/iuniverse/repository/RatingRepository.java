@@ -4,5 +4,6 @@ import java.util.List;
 import com.iuniverse.model.Rating;
 public interface RatingRepository extends JpaRepository<Rating, Long> {
     List<Rating> findByCourseId(Long courseId);
+    Rating findByStudentIdAndCourseId(Long studentId, Long courseId);
    
 }
