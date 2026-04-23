@@ -4,6 +4,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 
+
 @Entity
 @Table(name = "tbl_rating")
 @Data
@@ -15,7 +16,8 @@ public class Rating {
 
     private Long courseId;
     private Long studentId;
-
+    
+    @Column(name = "score", nullable = false)
     private Integer starCount; // 1-5
 
     private String comment;
