@@ -205,15 +205,20 @@ CREATE TABLE "tbl_question" (
 );
 
 -- Bảng Lượt nộp bài
+-- Bảng Lượt nộp bài
 CREATE TABLE "tbl_submission" (
-                                  "id" BIGSERIAL PRIMARY KEY,
-                                  "student_id" BIGINT NOT NULL,
-                                  "problem_set_id" BIGINT NOT NULL,
-                                  "submitted_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                                  "total_score" DOUBLE PRECISION,
-                                  CONSTRAINT "fk_submission_student" FOREIGN KEY ("student_id") REFERENCES "tbl_student"("user_id") ON DELETE CASCADE,
-                                  CONSTRAINT "fk_submission_problemset" FOREIGN KEY ("problem_set_id") REFERENCES "tbl_problem_set"("id") ON DELETE CASCADE
+    "id" BIGSERIAL PRIMARY KEY,
+    "student_id" BIGINT NOT NULL,
+    "problem_set_id" BIGINT NOT NULL,
+    "submitted_at" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    "total_score" DOUBLE PRECISION,
+    "essay_answer" TEXT,                          -- ← THÊM
+    "file_url" VARCHAR(500),                       -- ← THÊM
+    "status" VARCHAR(20) DEFAULT 'PENDING',        -- ← THÊM
+    CONSTRAINT "fk_submission_student" FOREIGN KEY ("student_id") REFERENCES "tbl_student"("user_id") ON DELETE CASCADE,
+    CONSTRAINT "fk_submission_problemset" FOREIGN KEY ("problem_set_id") REFERENCES "tbl_problem_set"("id") ON DELETE CASCADE
 );
+
 
 -- Bảng Chi tiết câu trả lời của sinh viên
 CREATE TABLE "tbl_student_answer" (
