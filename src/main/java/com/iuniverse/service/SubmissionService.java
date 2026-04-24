@@ -224,4 +224,9 @@ if (hasEssay) {
                         .build())
                 .toList();
     }
+
+    public List<Long> getCompletedProblemSets(Long studentId) {
+        return submissionRepository.findProblemSetIdsByStudentUserId(studentId);
+    }
+
 }

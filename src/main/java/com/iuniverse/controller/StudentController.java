@@ -207,4 +207,20 @@ public ResponseEntity<Object> getQuestions(@PathVariable Long psId) {
 
     return ResponseEntity.ok(result);
 }
+
+    @io.swagger.v3.oas.annotations.Operation(summary = "Get my submissions", description = "Get list of problem set IDs that the student has completed")
+    @org.springframework.security.access.prepost.PreAuthorize("hasAuthority('STUDENT')")
+    @org.springframework.web.bind.annotation.GetMapping("/my-submissions")
+    public org.springframework.http.ResponseEntity<Object> getMySubmissions(org.springframework.security.core.Authentication authentication) {
+        Long studentId = userService.findByUsername(authentication.getName()).getId();
+        List<Long> completedIds = submissionService.getCompletedProblemSets(studentId);
+        
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("status", org.springframework.http.HttpStatus.OK.value());
+        result.put("message", "Get completed problem sets successfully!");
+        result.put("data", completedIds);
+        
+        return org.springframework.http.ResponseEntity.ok(result);
+    }
+
 }
